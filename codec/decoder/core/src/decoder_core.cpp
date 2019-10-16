@@ -197,6 +197,11 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
     if (pCtx->bInstantDecFlag) { //no-delay decoding, wait for new slice
       if (pCtx->pThreadCtx != NULL) {
         PWelsDecoderThreadCTX pThreadCtx = (PWelsDecoderThreadCTX)pCtx->pThreadCtx;
+        if (pCtx->uiNalRefIdc > 0) {
+          for (uint32_t ln = 0; ln < pCtx->sMb.iMbHeight; ++ln) {
+            SET_EVENT (&pCtx->pDec->pReadyEvent[ln]);
+          }
+        }
         pThreadCtx->pDec = NULL;
       }
       return ERR_INFO_MB_NUM_INADEQUATE;
@@ -1479,11 +1484,6 @@ int32_t UpdateAccessUnit (PWelsDecoderContext pCtx) {
 
 int32_t InitialDqLayersContext (PWelsDecoderContext pCtx, const int32_t kiMaxWidth, const int32_t kiMaxHeight) {
   int32_t i = 0;
-  if (pCtx->iImgWidthInPixel != kiMaxWidth || pCtx->iImgHeightInPixel != kiMaxHeight) {
-    pCtx->bHaveGotMemory = true;
-    pCtx->iImgWidthInPixel = kiMaxWidth;
-    pCtx->iImgHeightInPixel = kiMaxHeight;
-  }
   WELS_VERIFY_RETURN_IF (ERR_INFO_INVALID_PARAM, (NULL == pCtx || kiMaxWidth <= 0 || kiMaxHeight <= 0))
   pCtx->sMb.iMbWidth  = (kiMaxWidth + 15) >> 4;
   pCtx->sMb.iMbHeight = (kiMaxHeight + 15) >> 4;
@@ -2660,7 +2660,13 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           // Subclause 8.2.5.2 Decoding process for gaps in frame_num
           int32_t iPrevFrameNum = pCtx->pLastDecPicInfo->iPrevFrameNum;
           if (pLastThreadCtx != NULL) {
-            iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pDec->iFrameNum;
+            if (pCtx->bNewSeqBegin) {
+              iPrevFrameNum = 0;
+            } else if (pLastThreadCtx->pDec != NULL) {
+              iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
+            } else {
+              iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pCtx->iFrameNum;
+            }
           }
           if (!kbIdrFlag  &&
               pSh->iFrameNum != iPrevFrameNum &&
@@ -2790,14 +2796,12 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
 
-      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1
-          && pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb != NULL) {
-        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->uiDecodingTimeStamp + 1) {
+      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1 && pCtx->pLastDecPicInfo->uiDecodingTimeStamp > 0) {
+        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->uiDecodingTimeStamp + 1) {
           WelsSleep (1);
         }
       }
-
-
+      pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
       iRet = DecodeFrameConstruction (pCtx, ppDst, pDstInfo);
       if (iRet)
         return iRet;

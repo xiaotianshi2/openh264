@@ -1306,10 +1306,17 @@ DECODING_STATE CWelsDecoder::ParseFrame (SWelsDecoderThreadCTX& sThreadCtx) {
   sThreadCtx.pCtx->bParamSetsLostFlag = m_bParamSetsLostFlag;
   sThreadCtx.pCtx->bFreezeOutput = m_bFreezeOutput;
   sThreadCtx.pCtx->uiDecodingTimeStamp = ++m_uiDecodeTimeStamp;
+  bool bPicBuffChanged = false;
   if (m_pLastDecThrCtx != NULL && sThreadCtx.pCtx->sSpsPpsCtx.iSeqId < m_pLastDecThrCtx->pCtx->sSpsPpsCtx.iSeqId) {
     CopySpsPps (m_pLastDecThrCtx->pCtx, sThreadCtx.pCtx);
     sThreadCtx.pCtx->iPicQueueNumber = m_pLastDecThrCtx->pCtx->iPicQueueNumber;
-
+    if (sThreadCtx.pCtx->pPicBuff != m_pPicBuff) {
+      bPicBuffChanged = true;
+      sThreadCtx.pCtx->pPicBuff = m_pPicBuff;
+      sThreadCtx.pCtx->bHaveGotMemory = m_pPicBuff != NULL;
+      sThreadCtx.pCtx->iImgWidthInPixel = m_pLastDecThrCtx->pCtx->iImgWidthInPixel;
+      sThreadCtx.pCtx->iImgHeightInPixel = m_pLastDecThrCtx->pCtx->iImgHeightInPixel;
+    }
   }
   int32_t iRet = DecodeFrame2WithCtx (sThreadCtx.pCtx, sThreadCtx.kpSrc, sThreadCtx.kiSrcLen, sThreadCtx.ppDst,
                                       &sThreadCtx.sDstInfo);
@@ -1320,8 +1327,7 @@ DECODING_STATE CWelsDecoder::ParseFrame (SWelsDecoderThreadCTX& sThreadCtx) {
   }
   if (sThreadCtx.pCtx->bNewSeqBegin) {
     m_pPicBuff = sThreadCtx.pCtx->pPicBuff;
-  } else if (sThreadCtx.pCtx->pPicBuff != m_pPicBuff) {
-    sThreadCtx.pCtx->pPicBuff = m_pPicBuff;
+  } else if (bPicBuffChanged) {
     InitialDqLayersContext (sThreadCtx.pCtx, sThreadCtx.pCtx->pSps->iMbWidth << 4, sThreadCtx.pCtx->pSps->iMbHeight << 4);
   }
   m_bParamSetsLostFlag = sThreadCtx.pCtx->bNewSeqBegin ? false : sThreadCtx.pCtx->bParamSetsLostFlag;
