@@ -290,6 +290,7 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
       iSliceSize = readPicture (pBuf, iFileSize, iBufPos, uSpsPtr, iSpsByteCount);
       if (iLastSpsByteCount > 0 && iSpsByteCount > 0) {
         if (iSpsByteCount != iLastSpsByteCount || memcmp (uSpsPtr, uLastSpsBuf, iLastSpsByteCount) != 0) {
+          //whenever new sequence is different from preceding sequence. All pending frames must be flushed out before the new sequence can start to decode.
           FlushFrames (pDecoder, iTotal, pYuvFile, pOptionFile, iFrameCount, uiTimeStamp, iLastWidth, iLastHeight);
         }
       }
@@ -577,7 +578,7 @@ int32_t main (int32_t iArgC, char* pArgV[]) {
     pDecoder->SetOption (DECODER_OPTION_TRACE_LEVEL, &iLevelSetting);
   }
 
-  int32_t iThreadCount = 3;
+  int32_t iThreadCount = 1;
   pDecoder->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   if (pDecoder->Initialize (&sDecParam)) {
