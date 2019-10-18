@@ -321,6 +321,7 @@ void CWelsDecoder::OpenDecoderThreads() {
       m_pDecThrCtx[i].pDec = NULL;
       CREATE_EVENT (&m_pDecThrCtx[i].sImageReady, 1, 0, NULL);
       CREATE_EVENT (&m_pDecThrCtx[i].sSliceDecodeStart, 1, 0, NULL);
+      CREATE_EVENT (&m_pDecThrCtx[i].sSliceDecodeFinsh, 1, 0, NULL);
       CREATE_SEMAPHORE (&m_pDecThrCtx[i].sThreadInfo.sIsIdle, 0, 1, NULL);
       CREATE_SEMAPHORE (&m_pDecThrCtx[i].sThreadInfo.sIsActivated, 0, 1, NULL);
       CREATE_THREAD (&m_pDecThrCtx[i].sThreadInfo.sThrHandle, pThrProcInit, (void*) (& (m_pDecThrCtx[i])));
@@ -336,6 +337,7 @@ void CWelsDecoder::CloseDecoderThreads() {
       WAIT_THREAD (&m_pDecThrCtx[i].sThreadInfo.sThrHandle);
       CLOSE_EVENT (&m_pDecThrCtx[i].sImageReady);
       CLOSE_EVENT (&m_pDecThrCtx[i].sSliceDecodeStart);
+      CLOSE_EVENT (&m_pDecThrCtx[i].sSliceDecodeFinsh);
       CLOSE_SEMAPHORE (&m_pDecThrCtx[i].sThreadInfo.sIsIdle);
       CLOSE_SEMAPHORE (&m_pDecThrCtx[i].sThreadInfo.sIsActivated);
     }

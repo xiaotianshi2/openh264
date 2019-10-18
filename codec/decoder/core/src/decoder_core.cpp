@@ -195,15 +195,6 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
              pCtx->iTotalNumMbRec, kiTotalNumMbInCurLayer, pCurDq->iMbWidth, pCurDq->iMbHeight);
     bFrameCompleteFlag = false; //return later after output buffer is done
     if (pCtx->bInstantDecFlag) { //no-delay decoding, wait for new slice
-      if (pCtx->pThreadCtx != NULL) {
-        PWelsDecoderThreadCTX pThreadCtx = (PWelsDecoderThreadCTX)pCtx->pThreadCtx;
-        if (pCtx->uiNalRefIdc > 0) {
-          for (uint32_t ln = 0; ln < pCtx->sMb.iMbHeight; ++ln) {
-            SET_EVENT (&pCtx->pDec->pReadyEvent[ln]);
-          }
-        }
-        pThreadCtx->pDec = NULL;
-      }
       return ERR_INFO_MB_NUM_INADEQUATE;
     }
   } else if (pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag
@@ -2521,6 +2512,18 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     PSliceHeaderExt pShExt = NULL;
     PSliceHeader pSh = NULL;
 
+    if (pLastThreadCtx != NULL) {
+      pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
+      if (pLastThreadCtx->pCtx->pDec != NULL) {
+        if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
+            && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
+          pCtx->pDec = pLastThreadCtx->pCtx->pDec;
+          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+          pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
+          RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
+        }
+      }
+    }
     if (pCtx->pDec == NULL) {
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
       if (pLastThreadCtx != NULL && pLastThreadCtx->pDec != NULL) {
@@ -2714,6 +2717,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           memset (&pCtx->lastReadyHeightOffset[0][0], -1, LIST_A * MAX_REF_PIC_COUNT * sizeof (int16_t));
           SET_EVENT (&pThreadCtx->sSliceDecodeStart);
           iRet = WelsDecodeAndConstructSlice (pCtx);
+          SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
         } else {
           iRet = WelsDecodeSlice (pCtx, bFreshSliceAvailable, pNalCur);
         }
