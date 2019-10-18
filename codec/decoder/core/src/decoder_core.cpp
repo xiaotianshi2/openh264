@@ -195,6 +195,10 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
              pCtx->iTotalNumMbRec, kiTotalNumMbInCurLayer, pCurDq->iMbWidth, pCurDq->iMbHeight);
     bFrameCompleteFlag = false; //return later after output buffer is done
     if (pCtx->bInstantDecFlag) { //no-delay decoding, wait for new slice
+      if (pCtx->pThreadCtx != NULL) {
+        PWelsDecoderThreadCTX pThreadCtx = (PWelsDecoderThreadCTX)pCtx->pThreadCtx;
+        pThreadCtx->iErrorCode = ERR_INFO_MB_NUM_INADEQUATE;
+      }
       return ERR_INFO_MB_NUM_INADEQUATE;
     }
   } else if (pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag
@@ -2514,7 +2518,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
 
     if (pLastThreadCtx != NULL) {
       pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
-      if (pLastThreadCtx->pCtx->pDec != NULL) {
+      if (pLastThreadCtx->iErrorCode == ERR_INFO_MB_NUM_INADEQUATE && pLastThreadCtx->pCtx->pDec != NULL) {
         if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
             && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
           pCtx->pDec = pLastThreadCtx->pCtx->pDec;
