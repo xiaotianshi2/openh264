@@ -224,6 +224,12 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
   if (pCtx->pThreadCtx != NULL && pPic->bIsComplete == false) {
     pPic->bIsComplete = true;
   }
+  if (pCtx->pThreadCtx != NULL) {
+    uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
+    for (uint32_t i = 0; i < uiMbHeight; ++i) {
+      SET_EVENT (&pCtx->pDec->pReadyEvent[i]);
+    }
+  }
   bool bOutResChange = false;
   if (pCtx->pThreadCtx == NULL || pCtx->pLastThreadCtx == NULL) {
     bOutResChange = (pCtx->iLastImgWidthInPixel != pDstInfo->UsrData.sSystemBuffer.iWidth)
@@ -2484,6 +2490,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
   PWelsDecoderThreadCTX pLastThreadCtx = NULL;
   if (pCtx->pLastThreadCtx != NULL) {
     pLastThreadCtx = (PWelsDecoderThreadCTX) (pCtx->pLastThreadCtx);
+    if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pDec == NULL) {
+      pLastThreadCtx->pDec = pLastThreadCtx->pCtx->pDec;
+    }
   }
   int32_t iPpsId = 0;
   int32_t iRet = ERR_NONE;
@@ -2517,10 +2526,14 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       if (pLastThreadCtx->pCtx->pDec != NULL) {
         if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
             && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
-          pCtx->pDec = pLastThreadCtx->pCtx->pDec;
           WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
-          pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
           RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
+          pCtx->pDec = pLastThreadCtx->pCtx->pDec;
+          pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
+          pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
+        } else {
+          pCtx->pDec = NULL;
+          pCtx->iTotalNumMbRec = 0;
         }
       }
     }

@@ -1683,6 +1683,9 @@ int32_t WelsDecodeAndConstructSlice (PWelsDecoderContext pCtx) {
   WelsCalcDeqCoeffScalingList (pCtx);
 
   iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
+  if (iNextMbXyIndex == 0 && pCtx->iTotalNumMbRec != 0) {
+    pCtx->iTotalNumMbRec = 0;
+  }
   iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
   iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth; // error is introduced by multiple slices case, 11/23/2009
   pSlice->iMbSkipRun = -1;
@@ -1736,9 +1739,8 @@ int32_t WelsDecodeAndConstructSlice (PWelsDecoderContext pCtx) {
     if (!pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex]) { //already con-ed, overwrite
       pCurDqLayer->pMbCorrectlyDecodedFlag[iNextMbXyIndex] = true;
       pCtx->pDec->iMbEcedPropNum += (pCurDqLayer->pMbRefConcealedFlag[iNextMbXyIndex] ? 1 : 0);
-      ++pCtx->iTotalNumMbRec;
     }
-
+    ++pCtx->iTotalNumMbRec;
     if (pCtx->iTotalNumMbRec > iTotalMbTargetLayer) {
       WelsLog (& (pCtx->sLogCtx), WELS_LOG_WARNING,
                "WelsTargetSliceConstruction():::pCtx->iTotalNumMbRec:%d, iTotalMbTargetLayer:%d",

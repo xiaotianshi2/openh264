@@ -855,7 +855,9 @@ int32_t WelsDecodeBs (PWelsDecoderContext pCtx, const uint8_t* kpBsBuf, const in
       if (IS_PARAM_SETS_NALS (pCtx->sCurNalHead.eNalUnitType)) {
         iRet = ParseNonVclNal (pCtx, pNalPayload, iDstIdx - iConsumedBytes, pSrcNal - 3, iSrcIdx + 3);
       }
-      CheckAndFinishLastPic (pCtx, ppDst, pDstBufInfo);
+      if (pCtx->pThreadCtx == NULL) {
+        CheckAndFinishLastPic (pCtx, ppDst, pDstBufInfo);
+      }
       if (pCtx->bAuReadyFlag && pCtx->pAccessUnitList->uiAvailUnitsNum != 0) {
         if (pCtx->pThreadCtx == NULL) {
           ConstructAccessUnit (pCtx, ppDst, pDstBufInfo);

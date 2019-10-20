@@ -108,6 +108,7 @@ static DECODING_STATE  ConstructFrame (CWelsDecoder* pWelsDecoder, PWelsDecoderT
     RESET_EVENT (&pLastThreadCtx->sSliceDecodeStart);
   }
   pThrCtx->pDec = NULL;
+  RESET_EVENT (&pThrCtx->sSliceDecodeFinsh);
   iRet |= pWelsDecoder->DecodeFrame2WithCtx (pThrCtx->pCtx, NULL, 0, pThrCtx->ppDst, &pThrCtx->sDstInfo);
 
   //WelsMutexUnlock (&pWelsDecoder->m_csDecoder);
