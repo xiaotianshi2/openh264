@@ -1683,9 +1683,6 @@ int32_t WelsDecodeAndConstructSlice (PWelsDecoderContext pCtx) {
   WelsCalcDeqCoeffScalingList (pCtx);
 
   iNextMbXyIndex = pSliceHeader->iFirstMbInSlice;
-  if (iNextMbXyIndex == 0 && pCtx->iTotalNumMbRec != 0) {
-    pCtx->iTotalNumMbRec = 0;
-  }
   iMbX = iNextMbXyIndex % pCurDqLayer->iMbWidth;
   iMbY = iNextMbXyIndex / pCurDqLayer->iMbWidth; // error is introduced by multiple slices case, 11/23/2009
   pSlice->iMbSkipRun = -1;
