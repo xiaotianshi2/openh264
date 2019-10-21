@@ -2524,7 +2524,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     if (pLastThreadCtx != NULL) {
       pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
       if (pSh->iFirstMbInSlice == 0) {
-        if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSclice) {
+        if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSlice) {
           WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
         }
         pCtx->pDec = NULL;
@@ -2534,7 +2534,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
             && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
           WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
           pCtx->pDec = pLastThreadCtx->pCtx->pDec;
-          pCtx->pDec->bIsUngroupedMultiSclice = true;
+          pCtx->pDec->bIsUngroupedMultiSlice = true;
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
           pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
         }
@@ -2544,7 +2544,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     if (pCtx->pDec == NULL) {
       isNewFrame = true;
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
-      pCtx->pDec->bIsUngroupedMultiSclice = false;
+      pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pLastThreadCtx != NULL) {
         if (pLastThreadCtx->pDec == NULL) {
           pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff);
