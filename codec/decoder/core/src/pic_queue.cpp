@@ -224,9 +224,9 @@ PPicture PrefetchLastPicForThread (PPicBuff pPicBuf) {
     return NULL;
   }
   if (pPicBuf->iCurrentIdx == 0) {
-    pPic = pPicBuf->ppPic[pPicBuf->iCapacity - 2];
+    pPic = pPicBuf->ppPic[pPicBuf->iCapacity - 1];
   } else {
-    pPic = pPicBuf->ppPic[pPicBuf->iCurrentIdx - 2];
+    pPic = pPicBuf->ppPic[pPicBuf->iCurrentIdx - 1];
   }
   return pPic;
 }

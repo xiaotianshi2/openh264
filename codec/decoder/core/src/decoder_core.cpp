@@ -2490,8 +2490,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
   PWelsDecoderThreadCTX pLastThreadCtx = NULL;
   if (pCtx->pLastThreadCtx != NULL) {
     pLastThreadCtx = (PWelsDecoderThreadCTX) (pCtx->pLastThreadCtx);
-    if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pDec == NULL) {
-      pLastThreadCtx->pDec = pLastThreadCtx->pCtx->pDec;
+    if (pLastThreadCtx->pDec == NULL) {
+      pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff);
     }
   }
   int32_t iPpsId = 0;
@@ -2546,9 +2546,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
       pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pLastThreadCtx != NULL) {
-        if (pLastThreadCtx->pDec == NULL) {
-          pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff);
-        }
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
         if (pLastThreadCtx->pDec->bUsedAsRef) {
           for (int32_t listIdx = LIST_0; listIdx < LIST_A; ++listIdx) {
