@@ -2537,12 +2537,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           pCtx->pDec->bIsUngroupedMultiSclice = true;
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
           pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
-        } else {
-          if (pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSclice) {
-            WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
-            pCtx->pDec = NULL;
-            pCtx->iTotalNumMbRec = 0;
-          }
         }
       }
     }
