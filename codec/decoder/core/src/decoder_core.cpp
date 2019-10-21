@@ -2527,7 +2527,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
             && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
           WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
-          RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
           pCtx->pDec = pLastThreadCtx->pCtx->pDec;
           pCtx->pDec->bIsUngroupedMultiSclice = true;
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
@@ -2535,10 +2534,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         } else {
           if (pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSclice) {
             WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
-            RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
+            pCtx->pDec = NULL;
+            pCtx->iTotalNumMbRec = 0;
           }
-          pCtx->pDec = NULL;
-          pCtx->iTotalNumMbRec = 0;
         }
       }
     }
