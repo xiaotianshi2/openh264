@@ -2529,9 +2529,14 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
           RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
           pCtx->pDec = pLastThreadCtx->pCtx->pDec;
+          pCtx->pDec->bIsUngroupedMultiSclice = true;
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
           pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
         } else {
+          if (pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSclice) {
+            WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+            RESET_EVENT (&pLastThreadCtx->sSliceDecodeFinsh);
+          }
           pCtx->pDec = NULL;
           pCtx->iTotalNumMbRec = 0;
         }
@@ -2539,6 +2544,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     }
     if (pCtx->pDec == NULL) {
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
+      pCtx->pDec->bIsUngroupedMultiSclice = false;
       if (pLastThreadCtx != NULL && pLastThreadCtx->pDec != NULL) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
         if (pLastThreadCtx->pDec->bUsedAsRef) {
@@ -2730,7 +2736,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           memset (&pCtx->lastReadyHeightOffset[0][0], -1, LIST_A * MAX_REF_PIC_COUNT * sizeof (int16_t));
           SET_EVENT (&pThreadCtx->sSliceDecodeStart);
           iRet = WelsDecodeAndConstructSlice (pCtx);
-          SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
         } else {
           iRet = WelsDecodeSlice (pCtx, bFreshSliceAvailable, pNalCur);
         }
@@ -2820,6 +2825,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       }
       pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
       iRet = DecodeFrameConstruction (pCtx, ppDst, pDstInfo);
+      SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
       if (iRet)
         return iRet;
 
