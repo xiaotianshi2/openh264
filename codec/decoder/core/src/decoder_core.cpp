@@ -195,10 +195,6 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
              pCtx->iTotalNumMbRec, kiTotalNumMbInCurLayer, pCurDq->iMbWidth, pCurDq->iMbHeight);
     bFrameCompleteFlag = false; //return later after output buffer is done
     if (pCtx->bInstantDecFlag) { //no-delay decoding, wait for new slice
-      if (pCtx->pThreadCtx != NULL) {
-        PWelsDecoderThreadCTX pThreadCtx = (PWelsDecoderThreadCTX)pCtx->pThreadCtx;
-        pThreadCtx->pDec = NULL;
-      }
       return ERR_INFO_MB_NUM_INADEQUATE;
     }
   } else if (pCurDq->sLayerInfo.sNalHeaderExt.bIdrFlag
@@ -227,6 +223,12 @@ static inline int32_t DecodeFrameConstruction (PWelsDecoderContext pCtx, uint8_t
   pDstInfo->iBufferStatus = 1;
   if (pCtx->pThreadCtx != NULL && pPic->bIsComplete == false) {
     pPic->bIsComplete = true;
+  }
+  if (pCtx->pThreadCtx != NULL) {
+    uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
+    for (uint32_t i = 0; i < uiMbHeight; ++i) {
+      SET_EVENT (&pCtx->pDec->pReadyEvent[i]);
+    }
   }
   bool bOutResChange = false;
   if (pCtx->pThreadCtx == NULL || pCtx->pLastThreadCtx == NULL) {
@@ -1479,11 +1481,6 @@ int32_t UpdateAccessUnit (PWelsDecoderContext pCtx) {
 
 int32_t InitialDqLayersContext (PWelsDecoderContext pCtx, const int32_t kiMaxWidth, const int32_t kiMaxHeight) {
   int32_t i = 0;
-  if (pCtx->iImgWidthInPixel != kiMaxWidth || pCtx->iImgHeightInPixel != kiMaxHeight) {
-    pCtx->bHaveGotMemory = true;
-    pCtx->iImgWidthInPixel = kiMaxWidth;
-    pCtx->iImgHeightInPixel = kiMaxHeight;
-  }
   WELS_VERIFY_RETURN_IF (ERR_INFO_INVALID_PARAM, (NULL == pCtx || kiMaxWidth <= 0 || kiMaxHeight <= 0))
   pCtx->sMb.iMbWidth  = (kiMaxWidth + 15) >> 4;
   pCtx->sMb.iMbHeight = (kiMaxHeight + 15) >> 4;
@@ -2493,6 +2490,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
   PWelsDecoderThreadCTX pLastThreadCtx = NULL;
   if (pCtx->pLastThreadCtx != NULL) {
     pLastThreadCtx = (PWelsDecoderThreadCTX) (pCtx->pLastThreadCtx);
+    if (pLastThreadCtx->pDec == NULL) {
+      pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff);
+    }
   }
   int32_t iPpsId = 0;
   int32_t iRet = ERR_NONE;
@@ -2521,9 +2521,33 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     PSliceHeaderExt pShExt = NULL;
     PSliceHeader pSh = NULL;
 
+    if (pLastThreadCtx != NULL) {
+      pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
+      if (pSh->iFirstMbInSlice == 0) {
+        if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSlice) {
+          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+        }
+        pCtx->pDec = NULL;
+        pCtx->iTotalNumMbRec = 0;
+      } else if (pLastThreadCtx->pCtx->pDec != NULL) {
+        if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
+            && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
+          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+          pCtx->pDec = pLastThreadCtx->pCtx->pDec;
+          pCtx->pDec->bIsUngroupedMultiSlice = true;
+          pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
+          pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
+        }
+      }
+    }
+    bool isNewFrame = true;
+    if (pThreadCtx != NULL) {
+      isNewFrame = pCtx->pDec == NULL;
+    }
     if (pCtx->pDec == NULL) {
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
-      if (pLastThreadCtx != NULL && pLastThreadCtx->pDec != NULL) {
+      pCtx->pDec->bIsUngroupedMultiSlice = false;
+      if (pLastThreadCtx != NULL) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
         if (pLastThreadCtx->pDec->bUsedAsRef) {
           for (int32_t listIdx = LIST_0; listIdx < LIST_A; ++listIdx) {
@@ -2660,7 +2684,13 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           // Subclause 8.2.5.2 Decoding process for gaps in frame_num
           int32_t iPrevFrameNum = pCtx->pLastDecPicInfo->iPrevFrameNum;
           if (pLastThreadCtx != NULL) {
-            iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pDec->iFrameNum;
+            if (pCtx->bNewSeqBegin) {
+              iPrevFrameNum = 0;
+            } else if (pLastThreadCtx->pDec != NULL) {
+              iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
+            } else {
+              iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pCtx->iFrameNum;
+            }
           }
           if (!kbIdrFlag  &&
               pSh->iFrameNum != iPrevFrameNum &&
@@ -2684,7 +2714,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           }
         }
 
-        if (iCurrIdD == kuiDependencyIdMax && iCurrIdQ == BASE_QUALITY_ID) {
+        if (iCurrIdD == kuiDependencyIdMax && iCurrIdQ == BASE_QUALITY_ID && isNewFrame) {
           iRet = InitRefPicList (pCtx, pCtx->uiNalRefIdc, pSh->iPicOrderCntLsb);
           if (iRet) {
             pCtx->bRPLRError = true;
@@ -2790,17 +2820,21 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
 
-      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1
-          && pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb != NULL) {
-        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->uiDecodingTimeStamp + 1) {
+      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1 && pCtx->pLastDecPicInfo->uiDecodingTimeStamp > 0) {
+        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->uiDecodingTimeStamp + 1) {
           WelsSleep (1);
         }
       }
-
-
+      if (pThreadCtx != NULL) {
+        pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
+      }
       iRet = DecodeFrameConstruction (pCtx, ppDst, pDstInfo);
-      if (iRet)
+      if (iRet) {
+        if (pThreadCtx != NULL) {
+          SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+        }
         return iRet;
+      }
 
       pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb = pCtx->pDec; //store latest decoded picture for EC
       pCtx->bUsedAsRef = pCtx->uiNalRefIdc > 0;
@@ -2856,7 +2890,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       }
     }
   }
-
+  if (pThreadCtx != NULL) {
+    SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+  }
   return ERR_NONE;
 }
 
