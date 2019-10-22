@@ -2540,9 +2540,11 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
     }
-    bool isNewFrame = false;
+    bool isNewFrame = true;
+    if (pThreadCtx != NULL) {
+      isNewFrame = pCtx->pDec == NULL;
+    }
     if (pCtx->pDec == NULL) {
-      isNewFrame = true;
       pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
       pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pLastThreadCtx != NULL) {
@@ -2823,10 +2825,14 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           WelsSleep (1);
         }
       }
-      pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
+      if (pThreadCtx != NULL) {
+        pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
+      }
       iRet = DecodeFrameConstruction (pCtx, ppDst, pDstInfo);
       if (iRet) {
-        SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+        if (pThreadCtx != NULL) {
+          SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+        }
         return iRet;
       }
 
@@ -2884,7 +2890,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       }
     }
   }
-  SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+  if (pThreadCtx != NULL) {
+    SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+  }
   return ERR_NONE;
 }
 
