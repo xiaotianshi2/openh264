@@ -519,6 +519,7 @@ typedef struct tagSWelsDecThreadCtx {
   SWelsDecEvent sImageReady;
   SWelsDecEvent sSliceDecodeStart;
   SWelsDecEvent sSliceDecodeFinsh;
+  int32_t       iPicBuffIdx; //picBuff Index
 } SWelsDecoderThreadCTX, *PWelsDecoderThreadCTX;
 
 static inline void ResetActiveSPSForEachLayer (PWelsDecoderContext pCtx) {

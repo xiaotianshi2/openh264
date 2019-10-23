@@ -2491,7 +2491,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
   if (pCtx->pLastThreadCtx != NULL) {
     pLastThreadCtx = (PWelsDecoderThreadCTX) (pCtx->pLastThreadCtx);
     if (pLastThreadCtx->pDec == NULL) {
-      pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff);
+      pLastThreadCtx->pDec = PrefetchLastPicForThread (pCtx->pPicBuff,
+                             pLastThreadCtx->iPicBuffIdx);
     }
   }
   int32_t iPpsId = 0;
@@ -2545,7 +2546,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       isNewFrame = pCtx->pDec == NULL;
     }
     if (pCtx->pDec == NULL) {
-      pCtx->pDec = pThreadCtx != NULL ? PrefetchPicForThread (pCtx->pPicBuff) : PrefetchPic (pCtx->pPicBuff);
+      pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
       pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pLastThreadCtx != NULL) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
@@ -2602,6 +2603,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     }
     pCtx->pDec->uiTimeStamp = pNalCur->uiTimeStamp;
     pCtx->pDec->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
+    if (pThreadCtx != NULL) {
+      pThreadCtx->iPicBuffIdx = pCtx->pDec->iPicBuffIdx;
+    }
 
     if (pCtx->iTotalNumMbRec == 0) { //Picture start to decode
       for (int32_t i = 0; i < LAYER_NUM_EXCHANGEABLE; ++ i)
