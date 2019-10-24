@@ -2546,8 +2546,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       isNewFrame = pCtx->pDec == NULL;
     }
     if (pCtx->pDec == NULL) {
-      pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
-      pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pLastThreadCtx != NULL) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
         if (pLastThreadCtx->pDec->bUsedAsRef) {
@@ -2577,6 +2575,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           }
         }
       }
+      pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
+      pCtx->pDec->bAvailableFlag = false;
+      pCtx->pDec->bIsUngroupedMultiSlice = false;
       if (pThreadCtx != NULL) {
         pThreadCtx->pDec = pCtx->pDec;
         if (pCtx->pDec != NULL) {
