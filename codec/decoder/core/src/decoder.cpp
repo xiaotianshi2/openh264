@@ -291,16 +291,18 @@ void DestroyPicBuff (PWelsDecoderContext pCtx, PPicBuff* ppPicBuf, CMemoryAlign*
 //reset picture reodering buffer list
 void ResetReorderingPictureBuffers (PPictReoderingStatus pPictReoderingStatus, PPictInfo pPictInfo,
                                     const bool& fullReset) {
-  int32_t pictInfoListCount = fullReset ? 16 : (pPictReoderingStatus->iLargestBufferedPicIndex + 1);
-  pPictReoderingStatus->iPictInfoIndex = 0;
-  pPictReoderingStatus->iMinPOC = IMinInt32;
-  pPictReoderingStatus->iNumOfPicts = 0;
-  pPictReoderingStatus->iLastGOPRemainPicts = 0;
-  pPictReoderingStatus->iLastWrittenPOC = IMinInt32;
-  pPictReoderingStatus->iLargestBufferedPicIndex = 0;
-  for (int32_t i = 0; i < pictInfoListCount; ++i) {
-    pPictInfo[i].bLastGOP = false;
-    pPictInfo[i].iPOC = IMinInt32;
+  if (pPictReoderingStatus != NULL && pPictInfo != NULL) {
+    int32_t pictInfoListCount = fullReset ? 16 : (pPictReoderingStatus->iLargestBufferedPicIndex + 1);
+    pPictReoderingStatus->iPictInfoIndex = 0;
+    pPictReoderingStatus->iMinPOC = IMinInt32;
+    pPictReoderingStatus->iNumOfPicts = 0;
+    pPictReoderingStatus->iLastGOPRemainPicts = 0;
+    pPictReoderingStatus->iLastWrittenPOC = IMinInt32;
+    pPictReoderingStatus->iLargestBufferedPicIndex = 0;
+    for (int32_t i = 0; i < pictInfoListCount; ++i) {
+      pPictInfo[i].bLastGOP = false;
+      pPictInfo[i].iPOC = IMinInt32;
+    }
   }
 }
 
