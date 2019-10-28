@@ -109,14 +109,6 @@ class CWelsDecoder : public ISVCDecoder {
   virtual long EXTAPI SetOption (DECODER_OPTION eOptID, void* pOption);
   virtual long EXTAPI GetOption (DECODER_OPTION eOptID, void* pOption);
 
-  typedef struct tagPictInfo {
-    SBufferInfo             sBufferInfo;
-    int32_t                 iPOC;
-    int32_t                 iPicBuffIdx;
-    uint32_t                uiDecodingTimeStamp;
-    bool                    bLastGOP;
-    unsigned char*          pData[3];
-  } SPictInfo, *PPictInfo;
  public:
   DECODING_STATE DecodeFrame2WithCtx (PWelsDecoderContext pCtx, const unsigned char* kpSrc, const int kiSrcLen,
                                       unsigned char** ppDst, SBufferInfo* pDstInfo);
@@ -124,14 +116,8 @@ class CWelsDecoder : public ISVCDecoder {
 
  private:
   welsCodecTrace*         m_pWelsTrace;
-  int32_t                 m_iPictInfoIndex;
-  int32_t                 m_iMinPOC;
   uint32_t                m_uiDecodeTimeStamp;
   bool                    m_bIsBaseline;
-  int32_t                 m_iNumOfPicts;
-  int32_t                 m_iLastGOPRemainPicts;
-  int32_t                 m_LastWrittenPOC;
-  int32_t                 m_iLargestBufferedPicIndex;
   int32_t                 m_iCpuCount;
   int32_t                 m_iThreadCount;
   PPicBuff                m_pPicBuff;
@@ -145,6 +131,7 @@ class CWelsDecoder : public ISVCDecoder {
   SWelsDecEvent           m_sReleaseBufferEvent;
   SWelsDecSemphore        m_sIsBusy;
   SPictInfo               m_sPictInfoList[16];
+  SPictReoderingStatus    m_sReoderingStatus;
   PWelsDecoderThreadCTX   m_pDecThrCtxActive[WELS_DEC_MAX_NUM_CPU];
   SVlcTable               m_sVlcTable;
   SWelsLastDecPicInfo     m_sLastDecPicInfo;
@@ -157,7 +144,6 @@ class CWelsDecoder : public ISVCDecoder {
   void UninitDecoderCtx (PWelsDecoderContext& pCtx);
   int32_t ResetDecoder (PWelsDecoderContext& pCtx);
   int32_t ThreadResetDecoder (PWelsDecoderContext& pCtx);
-  void ResetReorderingPictureBuffers();
 
   void OutputStatisticsLog (SDecoderStatistics& sDecoderStatistics);
   DECODING_STATE ReorderPicturesInDisplay (PWelsDecoderContext pCtx, unsigned char** ppDst, SBufferInfo* pDstInfo);

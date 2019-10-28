@@ -203,6 +203,20 @@ PPicture PrefetchPic (PPicBuff pPicBuf) {
   return pPic;
 }
 
+PPicture PrefetchPicForThread (PPicBuff pPicBuf) {
+  PPicture pPic = NULL;
+
+  if (pPicBuf->iCapacity == 0) {
+    return NULL;
+  }
+  pPic = pPicBuf->ppPic[pPicBuf->iCurrentIdx];
+  pPic->iPicBuffIdx = pPicBuf->iCurrentIdx;
+  if (++pPicBuf->iCurrentIdx >= pPicBuf->iCapacity) {
+    pPicBuf->iCurrentIdx = 0;
+  }
+  return pPic;
+}
+
 PPicture PrefetchLastPicForThread (PPicBuff pPicBuf, const int32_t& iLastPicBuffIdx) {
   PPicture pPic = NULL;
 

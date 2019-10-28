@@ -73,8 +73,6 @@ extern "C" {
 #include <sys/time.h>
 #endif
 
-static int32_t sIMinInt32 = -0x7FFFFFFF;
-
 namespace WelsDec {
 
 //////////////////////////////////////////////////////////////////////
@@ -133,14 +131,8 @@ DECLARE_PROCTHREAD (pThrProcFrame, p) {
 
 CWelsDecoder::CWelsDecoder (void)
   : m_pWelsTrace (NULL),
-    m_iPictInfoIndex (0),
-    m_iMinPOC (sIMinInt32),
     m_uiDecodeTimeStamp (0),
     m_bIsBaseline (false),
-    m_iNumOfPicts (0),
-    m_iLastGOPRemainPicts (0),
-    m_LastWrittenPOC (sIMinInt32),
-    m_iLargestBufferedPicIndex (0),
     m_iCpuCount (1),
     m_iThreadCount (1),
     m_pPicBuff (NULL),
@@ -170,10 +162,7 @@ CWelsDecoder::CWelsDecoder (void)
     WelsLog (&m_pWelsTrace->m_sLogCtx, WELS_LOG_INFO, "CWelsDecoder::CWelsDecoder() entry");
   }
 
-  for (int32_t i = 0; i < 16; ++i) {
-    m_sPictInfoList[i].bLastGOP = false;
-    m_sPictInfoList[i].iPOC = sIMinInt32;
-  }
+  ResetReorderingPictureBuffers (&m_sReoderingStatus, m_sPictInfoList, true);
 
   m_iCpuCount = GetCPUCount();
   if (m_iCpuCount > WELS_DEC_MAX_NUM_CPU) {
@@ -417,6 +406,8 @@ int32_t CWelsDecoder::InitDecoderCtx (PWelsDecoderContext& pCtx, const SDecoding
   pCtx->pLastDecPicInfo = &m_sLastDecPicInfo;
   pCtx->pDecoderStatistics = &m_sDecoderStatistics;
   pCtx->pVlcTable = &m_sVlcTable;
+  pCtx->pPictInfoList = m_sPictInfoList;
+  pCtx->pPictReoderingStatus = &m_sReoderingStatus;
   pCtx->pCsDecoder = &m_csDecoder;
   WelsDecoderDefaults (pCtx, &m_pWelsTrace->m_sLogCtx);
   WelsDecoderSpsPpsDefaults (pCtx->sSpsPpsCtx);
@@ -450,7 +441,7 @@ int32_t CWelsDecoder::ResetDecoder (PWelsDecoderContext& pCtx) {
     } else if (m_pWelsTrace != NULL) {
       WelsLog (&m_pWelsTrace->m_sLogCtx, WELS_LOG_ERROR, "ResetDecoder() failed as decoder context null");
     }
-    ResetReorderingPictureBuffers();
+    ResetReorderingPictureBuffers (&m_sReoderingStatus, m_sPictInfoList, false);
   }
   return ERR_INFO_UNINIT;
 }
@@ -461,7 +452,7 @@ int32_t CWelsDecoder::ThreadResetDecoder (PWelsDecoderContext& pCtx) {
   if (pCtx != NULL && m_pWelsTrace != NULL) {
     WelsLog (&m_pWelsTrace->m_sLogCtx, WELS_LOG_INFO, "ResetDecoder(), context error code is %d", pCtx->iErrorCode);
     memcpy (&sPrevParam, pCtx->pParam, sizeof (SDecodingParam));
-    ResetReorderingPictureBuffers();
+    ResetReorderingPictureBuffers (&m_sReoderingStatus, m_sPictInfoList, true);
     CloseDecoderThreads();
     UninitDecoder();
     InitDecoder (&sPrevParam);
@@ -674,7 +665,7 @@ long CWelsDecoder::GetOption (DECODER_OPTION eOptID, void* pOption) {
       WAIT_SEMAPHORE (&m_pDecThrCtxActive[activeThread]->sThreadInfo.sIsIdle, WELS_DEC_THREAD_WAIT_INFINITE);
       RELEASE_SEMAPHORE (&m_pDecThrCtxActive[activeThread]->sThreadInfo.sIsIdle);
     }
-    * ((int*)pOption) = m_iNumOfPicts;
+    * ((int*)pOption) = m_sReoderingStatus.iNumOfPicts;
     return cmResultSuccess;
   }
 
@@ -688,7 +679,7 @@ DECODING_STATE CWelsDecoder::DecodeFrameNoDelay (const unsigned char* kpSrc,
   int iRet = dsErrorFree;
   if (m_iThreadCount > 1) {
     iRet = ThreadDecodeFrameInternal (kpSrc, kiSrcLen, ppDst, pDstInfo);
-    if (m_iNumOfPicts) {
+    if (m_sReoderingStatus.iNumOfPicts) {
       WAIT_EVENT (&m_sBufferingEvent, WELS_DEC_THREAD_WAIT_INFINITE);
       RESET_EVENT (&m_sReleaseBufferEvent);
       ReleaseBufferedReadyPicture (NULL, ppDst, pDstInfo);
@@ -914,37 +905,37 @@ DECODING_STATE CWelsDecoder::FlushFrame (unsigned char** ppDst,
       bEndOfStreamFlag = false;
     }
   }
-  if (bEndOfStreamFlag && m_iNumOfPicts > 0) {
-    m_iMinPOC = sIMinInt32;
-    for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-      if (m_iMinPOC == sIMinInt32 && m_sPictInfoList[i].iPOC > sIMinInt32) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+  if (bEndOfStreamFlag && m_sReoderingStatus.iNumOfPicts > 0) {
+    m_sReoderingStatus.iMinPOC = IMinInt32;
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
-      if (m_sPictInfoList[i].iPOC > sIMinInt32 && m_sPictInfoList[i].iPOC < m_iMinPOC) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+      if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
     }
   }
-  if (m_iMinPOC > sIMinInt32) {
-    m_LastWrittenPOC = m_iMinPOC;
+  if (m_sReoderingStatus.iMinPOC > IMinInt32) {
+    m_sReoderingStatus.iLastWrittenPOC = m_sReoderingStatus.iMinPOC;
 #if defined (_DEBUG)
 #ifdef _MOTION_VECTOR_DUMP_
-    fprintf (stderr, "Output POC: #%d\n", m_LastWrittenPOC);
+    fprintf (stderr, "Output POC: #%d\n", m_sReoderingStatus.iLastWrittenPOC);
 #endif
 #endif
-    memcpy (pDstInfo, &m_sPictInfoList[m_iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
-    ppDst[0] = m_sPictInfoList[m_iPictInfoIndex].pData[0];
-    ppDst[1] = m_sPictInfoList[m_iPictInfoIndex].pData[1];
-    ppDst[2] = m_sPictInfoList[m_iPictInfoIndex].pData[2];
-    m_sPictInfoList[m_iPictInfoIndex].iPOC = sIMinInt32;
+    memcpy (pDstInfo, &m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
+    ppDst[0] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[0];
+    ppDst[1] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[1];
+    ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
+    m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
     PPicBuff pPicBuff = m_iThreadCount == 1 ? m_pDecThrCtx[0].pCtx->pPicBuff : m_pPicBuff;
-    if (m_sPictInfoList[m_iPictInfoIndex].iPicBuffIdx < pPicBuff->iCapacity)
-      pPicBuff->ppPic[m_sPictInfoList[m_iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
-    m_sPictInfoList[m_iPictInfoIndex].bLastGOP = false;
-    m_iMinPOC = sIMinInt32;
-    --m_iNumOfPicts;
+    if (m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx < pPicBuff->iCapacity)
+      pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
+    m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
+    m_sReoderingStatus.iMinPOC = IMinInt32;
+    --m_sReoderingStatus.iNumOfPicts;
   }
 
   return dsErrorFree;
@@ -1002,28 +993,28 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
   }
   m_bIsBaseline = pCtx->pSps->uiProfileIdc == 66 || pCtx->pSps->uiProfileIdc == 83;
   if (!m_bIsBaseline) {
-    if (m_iNumOfPicts && pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb
+    if (m_sReoderingStatus.iNumOfPicts && pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb
         && pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->bNewSeqBegin) {
-      m_iLastGOPRemainPicts = m_iNumOfPicts;
-      for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-        if (m_sPictInfoList[i].iPOC > sIMinInt32) {
+      m_sReoderingStatus.iLastGOPRemainPicts = m_sReoderingStatus.iNumOfPicts;
+      for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+        if (m_sPictInfoList[i].iPOC > IMinInt32) {
           m_sPictInfoList[i].bLastGOP = true;
         }
       }
     } else {
-      if (m_iNumOfPicts > 0) {
+      if (m_sReoderingStatus.iNumOfPicts > 0) {
         //This can happen when decoder moves to next GOP without being able to decoder first picture PicOrderCntLsb = 0
         bool hasGOPChanged = false;
-        for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
+        for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
           if (m_sPictInfoList[i].iPOC == pCtx->pSliceHeader->iPicOrderCntLsb) {
             hasGOPChanged = true;
             break;
           }
         }
         if (hasGOPChanged) {
-          m_iLastGOPRemainPicts = m_iNumOfPicts;
-          for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-            if (m_sPictInfoList[i].iPOC > sIMinInt32) {
+          m_sReoderingStatus.iLastGOPRemainPicts = m_sReoderingStatus.iNumOfPicts;
+          for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+            if (m_sPictInfoList[i].iPOC > IMinInt32) {
               m_sPictInfoList[i].bLastGOP = true;
             }
           }
@@ -1032,7 +1023,7 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
     }
   }
   for (int32_t i = 0; i < 16; ++i) {
-    if (m_sPictInfoList[i].iPOC == sIMinInt32) {
+    if (m_sPictInfoList[i].iPOC == IMinInt32) {
       memcpy (&m_sPictInfoList[i].sBufferInfo, pDstInfo, sizeof (SBufferInfo));
       m_sPictInfoList[i].pData[0] = ppDst[0];
       m_sPictInfoList[i].pData[1] = ppDst[1];
@@ -1043,9 +1034,9 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
       pCtx->pPicBuff->ppPic[m_sPictInfoList[i].iPicBuffIdx]->bAvailableFlag = false;
       m_sPictInfoList[i].bLastGOP = false;
       pDstInfo->iBufferStatus = 0;
-      ++m_iNumOfPicts;
-      if (i > m_iLargestBufferedPicIndex) {
-        m_iLargestBufferedPicIndex = i;
+      ++m_sReoderingStatus.iNumOfPicts;
+      if (i > m_sReoderingStatus.iLargestBufferedPicIndex) {
+        m_sReoderingStatus.iLargestBufferedPicIndex = i;
       }
       break;
     }
@@ -1055,103 +1046,106 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
 void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsigned char** ppDst,
     SBufferInfo* pDstInfo) {
   PPicBuff pPicBuff = pCtx ? pCtx->pPicBuff : m_pPicBuff;
-  if (!m_bIsBaseline && m_iLastGOPRemainPicts > 0) {
-    m_iMinPOC = sIMinInt32;
-    for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-      if (m_iMinPOC == sIMinInt32 && m_sPictInfoList[i].iPOC > sIMinInt32 && m_sPictInfoList[i].bLastGOP) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+  if (!m_bIsBaseline && m_sReoderingStatus.iLastGOPRemainPicts > 0) {
+    m_sReoderingStatus.iMinPOC = IMinInt32;
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].bLastGOP) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
-      if (m_sPictInfoList[i].iPOC > sIMinInt32 && m_sPictInfoList[i].iPOC < m_iMinPOC && m_sPictInfoList[i].bLastGOP) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+      if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC
+          && m_sPictInfoList[i].bLastGOP) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
     }
-    m_LastWrittenPOC = m_iMinPOC;
+    m_sReoderingStatus.iLastWrittenPOC = m_sReoderingStatus.iMinPOC;
 #if defined (_DEBUG)
 #ifdef _MOTION_VECTOR_DUMP_
-    fprintf (stderr, "Output POC: #%d\n", m_LastWrittenPOC);
+    fprintf (stderr, "Output POC: #%d\n", m_sReoderingStatus.iLastWrittenPOC);
 #endif
 #endif
-    memcpy (pDstInfo, &m_sPictInfoList[m_iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
-    ppDst[0] = m_sPictInfoList[m_iPictInfoIndex].pData[0];
-    ppDst[1] = m_sPictInfoList[m_iPictInfoIndex].pData[1];
-    ppDst[2] = m_sPictInfoList[m_iPictInfoIndex].pData[2];
-    m_sPictInfoList[m_iPictInfoIndex].iPOC = sIMinInt32;
-    pPicBuff->ppPic[m_sPictInfoList[m_iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
-    m_sPictInfoList[m_iPictInfoIndex].bLastGOP = false;
-    m_iMinPOC = sIMinInt32;
-    --m_iNumOfPicts;
-    --m_iLastGOPRemainPicts;
-    if (m_iLastGOPRemainPicts == 0) {
-      m_LastWrittenPOC = sIMinInt32;
+    memcpy (pDstInfo, &m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
+    ppDst[0] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[0];
+    ppDst[1] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[1];
+    ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
+    m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
+    pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
+    m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
+    m_sReoderingStatus.iMinPOC = IMinInt32;
+    --m_sReoderingStatus.iNumOfPicts;
+    --m_sReoderingStatus.iLastGOPRemainPicts;
+    if (m_sReoderingStatus.iLastGOPRemainPicts == 0) {
+      m_sReoderingStatus.iLastWrittenPOC = IMinInt32;
     }
     return;
   }
-  if (m_iNumOfPicts && m_bIsBaseline) {
+  if (m_sReoderingStatus.iNumOfPicts && m_bIsBaseline) {
     uint32_t uiDecodingTimeStamp = 0;
-    for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-      if (m_sPictInfoList[i].iPOC > sIMinInt32) {
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (m_sPictInfoList[i].iPOC > IMinInt32) {
         uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
-        m_iPictInfoIndex = i;
+        m_sReoderingStatus.iPictInfoIndex = i;
         break;
       }
     }
-    for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-      if (m_iPictInfoIndex != i && m_sPictInfoList[i].iPOC > sIMinInt32
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (m_sReoderingStatus.iPictInfoIndex != i && m_sPictInfoList[i].iPOC > IMinInt32
           && m_sPictInfoList[i].sBufferInfo.uiInBsTimeStamp < uiDecodingTimeStamp) {
         uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
-        m_iPictInfoIndex = i;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
     }
     if (uiDecodingTimeStamp > 0) {
-      memcpy (pDstInfo, &m_sPictInfoList[m_iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
-      ppDst[0] = m_sPictInfoList[m_iPictInfoIndex].pData[0];
-      ppDst[1] = m_sPictInfoList[m_iPictInfoIndex].pData[1];
-      ppDst[2] = m_sPictInfoList[m_iPictInfoIndex].pData[2];
-      m_sPictInfoList[m_iPictInfoIndex].iPOC = sIMinInt32;
-      m_pPicBuff->ppPic[m_sPictInfoList[m_iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
-      --m_iNumOfPicts;
+      memcpy (pDstInfo, &m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
+      ppDst[0] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[0];
+      ppDst[1] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[1];
+      ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
+      m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
+      m_pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
+      --m_sReoderingStatus.iNumOfPicts;
     }
     return;
   }
-  if (m_iNumOfPicts > 0) {
-    m_iMinPOC = sIMinInt32;
-    for (int32_t i = 0; i <= m_iLargestBufferedPicIndex; ++i) {
-      if (m_iMinPOC == sIMinInt32 && m_sPictInfoList[i].iPOC > sIMinInt32) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+  if (m_sReoderingStatus.iNumOfPicts > 0) {
+    m_sReoderingStatus.iMinPOC = IMinInt32;
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
-      if (m_sPictInfoList[i].iPOC > sIMinInt32 && m_sPictInfoList[i].iPOC < m_iMinPOC) {
-        m_iMinPOC = m_sPictInfoList[i].iPOC;
-        m_iPictInfoIndex = i;
+      if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC) {
+        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+        m_sReoderingStatus.iPictInfoIndex = i;
       }
     }
   }
-  if (m_iMinPOC > sIMinInt32) {
+  if (m_sReoderingStatus.iMinPOC > IMinInt32) {
     bool isReady = false;
     if (pCtx != NULL) {
-      isReady = (m_LastWrittenPOC > sIMinInt32 && m_iMinPOC - m_LastWrittenPOC <= 1)
-                || m_iMinPOC < pCtx->pSliceHeader->iPicOrderCntLsb;
+      isReady = (m_sReoderingStatus.iLastWrittenPOC > IMinInt32
+                 && m_sReoderingStatus.iMinPOC - m_sReoderingStatus.iLastWrittenPOC <= 1)
+                || m_sReoderingStatus.iMinPOC < pCtx->pSliceHeader->iPicOrderCntLsb;
     } else {
-      isReady = m_iMinPOC == 0 || (m_LastWrittenPOC >= 0 && m_iMinPOC <= m_LastWrittenPOC + 2) ;
+      isReady = m_sReoderingStatus.iMinPOC == 0 || (m_sReoderingStatus.iLastWrittenPOC >= 0
+                && m_sReoderingStatus.iMinPOC <= m_sReoderingStatus.iLastWrittenPOC + 2) ;
     }
     if (isReady) {
-      m_LastWrittenPOC = m_iMinPOC;
+      m_sReoderingStatus.iLastWrittenPOC = m_sReoderingStatus.iMinPOC;
 #if defined (_DEBUG)
 #ifdef _MOTION_VECTOR_DUMP_
-      fprintf (stderr, "Output POC: #%d\n", m_LastWrittenPOC);
+      fprintf (stderr, "Output POC: #%d\n", m_sReoderingStatus.iLastWrittenPOC);
 #endif
 #endif
-      memcpy (pDstInfo, &m_sPictInfoList[m_iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
-      ppDst[0] = m_sPictInfoList[m_iPictInfoIndex].pData[0];
-      ppDst[1] = m_sPictInfoList[m_iPictInfoIndex].pData[1];
-      ppDst[2] = m_sPictInfoList[m_iPictInfoIndex].pData[2];
-      m_sPictInfoList[m_iPictInfoIndex].iPOC = sIMinInt32;
-      pPicBuff->ppPic[m_sPictInfoList[m_iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
-      m_sPictInfoList[m_iPictInfoIndex].bLastGOP = false;
-      m_iMinPOC = sIMinInt32;
-      --m_iNumOfPicts;
+      memcpy (pDstInfo, &m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].sBufferInfo, sizeof (SBufferInfo));
+      ppDst[0] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[0];
+      ppDst[1] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[1];
+      ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
+      m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
+      pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx]->bAvailableFlag = true;
+      m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
+      m_sReoderingStatus.iMinPOC = IMinInt32;
+      --m_sReoderingStatus.iNumOfPicts;
     }
   }
 }
@@ -1289,19 +1283,6 @@ DECODING_STATE CWelsDecoder::DecodeFrameEx (const unsigned char* kpSrc,
   DECODING_STATE state = dsErrorFree;
 
   return state;
-}
-
-void CWelsDecoder::ResetReorderingPictureBuffers() {
-  m_iPictInfoIndex = 0;
-  m_iMinPOC = sIMinInt32;
-  m_iNumOfPicts = 0;
-  m_iLastGOPRemainPicts = 0;
-  m_LastWrittenPOC = sIMinInt32;
-  m_iLargestBufferedPicIndex = 0;
-  for (int32_t i = 0; i < 16; ++i) {
-    m_sPictInfoList[i].bLastGOP = false;
-    m_sPictInfoList[i].iPOC = sIMinInt32;
-  }
 }
 
 DECODING_STATE CWelsDecoder::ParseFrame (SWelsDecoderThreadCTX& sThreadCtx) {

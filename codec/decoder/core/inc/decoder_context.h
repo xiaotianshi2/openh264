@@ -65,6 +65,7 @@ namespace WelsDec {
 #define  WELS_QP_MAX    51
 
 #define LONG_TERM_REF
+#define IMinInt32 -0x7FFFFFFF
 typedef struct SWels_Cabac_Element {
   uint8_t uiState;
   uint8_t uiMPS;
@@ -278,6 +279,24 @@ typedef struct tagSWelsLastDecPicInfo {
   bool              bLastHasMmco5;
   uint32_t          uiDecodingTimeStamp; //represent relative decoding time stamps
 } SWelsLastDecPicInfo, *PWelsLastDecPicInfo;
+
+typedef struct tagPictInfo {
+  SBufferInfo             sBufferInfo;
+  int32_t                 iPOC;
+  int32_t                 iPicBuffIdx;
+  uint32_t                uiDecodingTimeStamp;
+  bool                    bLastGOP;
+  unsigned char*          pData[3];
+} SPictInfo, *PPictInfo;
+
+typedef struct tagPictReoderingStatus {
+  int32_t iPictInfoIndex;
+  int32_t iMinPOC;
+  int32_t iNumOfPicts;
+  int32_t iLastGOPRemainPicts;
+  int32_t iLastWrittenPOC;
+  int32_t iLargestBufferedPicIndex;
+} SPictReoderingStatus, *PPictReoderingStatus;
 
 /*
  *  SWelsDecoderContext: to maintail all modules data over decoder@framework
@@ -493,6 +512,8 @@ typedef struct TagWelsDecoderContext {
   void* pLastThreadCtx;
   WELS_MUTEX* pCsDecoder;
   int16_t lastReadyHeightOffset[LIST_A][MAX_REF_PIC_COUNT]; //last ready reference MB offset
+  PPictInfo               pPictInfoList;
+  PPictReoderingStatus    pPictReoderingStatus;
 } SWelsDecoderContext, *PWelsDecoderContext;
 
 typedef struct tagSWelsDecThread {
