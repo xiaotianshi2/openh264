@@ -111,6 +111,9 @@ PPicture AllocPicture (PWelsDecoderContext pCtx, const int32_t kiPicWidth, const
   uint32_t uiMbWidth = (kiPicWidth + 15) >> 4;
   uint32_t uiMbHeight = (kiPicHeight + 15) >> 4;
   uint32_t uiMbCount = uiMbWidth * uiMbHeight;
+
+  pPic->pMbCorrectlyDecodedFlag = (bool*)pMa->WelsMallocz (uiMbCount * sizeof (bool), "pPic->pMbCorrectlyDecodedFlag");
+
   pPic->pMbType = (uint32_t*)pMa->WelsMallocz (uiMbCount * sizeof (uint32_t),
                   "pPic->pMbType");
   pPic->pMv[LIST_0] = (int16_t (*)[16][2])pMa->WelsMallocz (uiMbCount * sizeof (
@@ -138,6 +141,11 @@ void FreePicture (PPicture pPic, CMemoryAlign* pMa) {
     if (pPic->pBuffer[0]) {
       pMa->WelsFree (pPic->pBuffer[0], "pPic->pBuffer[0]");
       pPic->pBuffer[0] = NULL;
+    }
+
+    if (pPic->pMbCorrectlyDecodedFlag) {
+      pMa->WelsFree (pPic->pMbCorrectlyDecodedFlag, "pPic->pMbCorrectlyDecodedFlag");
+      pPic->pMbCorrectlyDecodedFlag = NULL;
     }
 
     if (pPic->pMbType) {
