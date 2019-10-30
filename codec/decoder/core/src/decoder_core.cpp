@@ -2553,7 +2553,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
             uint32_t i = 0;
             while (i < MAX_DPB_COUNT && pLastThreadCtx->pCtx->sRefPic.pRefList[listIdx][i]) {
               pLastThreadCtx->pDec->pRefPic[listIdx][i] = pLastThreadCtx->pCtx->sRefPic.pRefList[listIdx][i];
-              pLastThreadCtx->pDec->pRefPic[listIdx][i]->bAvailableFlag = false;
               ++i;
             }
           }
@@ -2563,30 +2562,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         } else {
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
         }
-        //printf ("last uiDecodingTimeStamp = %d\n", pLastThreadCtx->pCtx->uiDecodingTimeStamp);
-        for (int32_t i = 0; i < pCtx->sRefPic.uiRefCount[LIST_0]; ++i) {
-          if (pCtx->sRefPic.pRefList[LIST_0][i] != NULL) {
-            pCtx->sRefPic.pRefList[LIST_0][i]->bAvailableFlag = false;
-          }
-        }
-        for (int32_t i = 0; i < pCtx->sRefPic.uiRefCount[LIST_1]; ++i) {
-          if (pCtx->sRefPic.pRefList[LIST_1][i] != NULL) {
-            pCtx->sRefPic.pRefList[LIST_1][i]->bAvailableFlag = false;
-          }
-        }
       }
       pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
-      if (pThreadCtx != NULL) {
-        if (pCtx->pDec != NULL) {
-          pCtx->pDec->bAvailableFlag = false;
-          pCtx->pDec->bIsUngroupedMultiSlice = false;
-          pThreadCtx->pDec = pCtx->pDec;
-          uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
-          for (uint32_t i = 0; i < uiMbHeight; ++i) {
-            RESET_EVENT (&pCtx->pDec->pReadyEvent[i]);
-          }
-        }
-      }
       if (pCtx->iTotalNumMbRec != 0)
         pCtx->iTotalNumMbRec = 0;
 
@@ -2597,6 +2574,15 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         // The error code here need to be separated from the dsOutOfMemory
         pCtx->iErrorCode |= dsOutOfMemory;
         return ERR_INFO_REF_COUNT_OVERFLOW;
+      }
+      ++pCtx->pDec->uiRefCount;
+      if (pThreadCtx != NULL) {
+        pCtx->pDec->bIsUngroupedMultiSlice = false;
+        pThreadCtx->pDec = pCtx->pDec;
+        uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
+        for (uint32_t i = 0; i < uiMbHeight; ++i) {
+          RESET_EVENT (&pCtx->pDec->pReadyEvent[i]);
+        }
       }
       pCtx->pDec->bNewSeqBegin = pCtx->bNewSeqBegin; //set flag for start decoding
     } else if (pCtx->iTotalNumMbRec == 0) { //pDec != NULL, already start
@@ -2826,11 +2812,11 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
 
-      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1 && pCtx->pLastDecPicInfo->uiDecodingTimeStamp > 0) {
-        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->uiDecodingTimeStamp + 1) {
-          WelsSleep (1);
-        }
+      if (pLastThreadCtx != NULL && pCtx->uiDecodingTimeStamp == pLastThreadCtx->pCtx->uiDecodingTimeStamp + 1) {
+        WAIT_SEMAPHORE (&pLastThreadCtx->sThreadInfo.sIsIdle, WELS_DEC_THREAD_WAIT_INFINITE);
+        RELEASE_SEMAPHORE (&pLastThreadCtx->sThreadInfo.sIsIdle);
       }
+
       if (pThreadCtx != NULL) {
         pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
       }
