@@ -197,12 +197,14 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
   int32_t iLastWidth = 0, iLastHeight = 0;
   int32_t iFrameCount = 0;
   int32_t iEndOfStreamFlag = 0;
-  int32_t num_of_frames_in_buffer = 0;
   pDecoder->SetOption (DECODER_OPTION_ERROR_CON_IDC, &iErrorConMethod);
   CUtils cOutputModule;
   double dElapsed = 0;
   uint8_t uLastSpsBuf[32];
   int32_t iLastSpsByteCount = 0;
+
+  int32_t iThreadCount = 1;
+  pDecoder->GetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   if (kpH264FileName) {
     pH264File = fopen (kpH264FileName, "rb");
@@ -266,9 +268,6 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
   }
 
   memcpy (pBuf + iFileSize, &uiStartCode[0], 4); //confirmed_safe_unsafe_usage
-
-  int32_t iThreadCount = 1;
-  pDecoder->GetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   while (true) {
 
