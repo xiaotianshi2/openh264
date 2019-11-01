@@ -69,7 +69,7 @@ struct SPicture {
   /*******************************sef_definition for misc use****************************/
   bool            bUsedAsRef;                                                     //for ref pic management
   bool            bIsLongRef;     // long term reference frame flag       //for ref pic management
-  uint8_t         uiRefCount;
+  int8_t          iRefCount;
 
   bool            bIsComplete;    // indicate whether current picture is complete, not from EC
   /*******************************for future use****************************/

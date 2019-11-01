@@ -151,7 +151,7 @@ static int32_t IncreasePicBuff (PWelsDecoderContext pCtx, PPicBuff* ppPicBuf, co
   for (int32_t i = 0; i < pPicNewBuf->iCapacity; i++) {
     pPicNewBuf->ppPic[i]->bUsedAsRef = false;
     pPicNewBuf->ppPic[i]->bIsLongRef = false;
-    pPicNewBuf->ppPic[i]->uiRefCount = 0;
+    pPicNewBuf->ppPic[i]->iRefCount = 0;
     pPicNewBuf->ppPic[i]->bIsComplete = false;
   }
 // remove old PicBuf
@@ -237,7 +237,7 @@ static int32_t DecreasePicBuff (PWelsDecoderContext pCtx, PPicBuff* ppPicBuf, co
   for (int32_t i = 0; i < pPicNewBuf->iCapacity; i++) {
     pPicNewBuf->ppPic[i]->bUsedAsRef = false;
     pPicNewBuf->ppPic[i]->bIsLongRef = false;
-    pPicNewBuf->ppPic[i]->uiRefCount = 0;
+    pPicNewBuf->ppPic[i]->iRefCount = 0;
     pPicNewBuf->ppPic[i]->bIsComplete = false;
   }
   // remove old PicBuf

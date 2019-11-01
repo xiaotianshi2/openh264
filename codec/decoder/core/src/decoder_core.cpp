@@ -2575,7 +2575,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         pCtx->iErrorCode |= dsOutOfMemory;
         return ERR_INFO_REF_COUNT_OVERFLOW;
       }
-      ++pCtx->pDec->uiRefCount;
+      ++pCtx->pDec->iRefCount;
       if (pThreadCtx != NULL) {
         pCtx->pDec->bIsUngroupedMultiSlice = false;
         pThreadCtx->pDec = pCtx->pDec;
@@ -2600,6 +2600,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         memset (pCtx->sMb.pSliceIdc[i], 0xff, (pCtx->sMb.iMbWidth * pCtx->sMb.iMbHeight * sizeof (int32_t)));
       memset (pCtx->pCurDqLayer->pMbCorrectlyDecodedFlag, 0, pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight * sizeof (bool));
       memset (pCtx->pCurDqLayer->pMbRefConcealedFlag, 0, pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight * sizeof (bool));
+      memset (pCtx->pDec->pRefPic[LIST_0], 0, sizeof (PPicture) * 17);
+      memset (pCtx->pDec->pRefPic[LIST_1], 0, sizeof (PPicture) * 17);
       pCtx->pDec->iMbNum = pCtx->pSps->iMbWidth * pCtx->pSps->iMbHeight;
       pCtx->pDec->iMbEcedNum = 0;
       pCtx->pDec->iMbEcedPropNum = 0;
@@ -2813,9 +2815,10 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
 
-      if (pLastThreadCtx != NULL && pCtx->uiDecodingTimeStamp == pLastThreadCtx->pCtx->uiDecodingTimeStamp + 1) {
-        WAIT_SEMAPHORE (&pLastThreadCtx->sThreadInfo.sIsIdle, WELS_DEC_THREAD_WAIT_INFINITE);
-        RELEASE_SEMAPHORE (&pLastThreadCtx->sThreadInfo.sIsIdle);
+      if (pThreadCtx != NULL && pCtx->uiDecodingTimeStamp > 1 && pCtx->pLastDecPicInfo->uiDecodingTimeStamp > 0) {
+        while (pCtx->uiDecodingTimeStamp > pCtx->pLastDecPicInfo->uiDecodingTimeStamp + 1) {
+          WelsSleep (1);
+        }
       }
 
       if (pThreadCtx != NULL) {

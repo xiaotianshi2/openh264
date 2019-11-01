@@ -937,9 +937,7 @@ DECODING_STATE CWelsDecoder::FlushFrame (unsigned char** ppDst,
     PPicBuff pPicBuff = m_iThreadCount == 1 ? m_pDecThrCtx[0].pCtx->pPicBuff : m_pPicBuff;
     if (m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx < pPicBuff->iCapacity) {
       PPicture pPic = pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx];
-      if (pPic->uiRefCount > 0) {
-        --pPic->uiRefCount;
-      }
+      --pPic->iRefCount;
     }
     m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
     m_sReoderingStatus.iMinPOC = IMinInt32;
@@ -1078,9 +1076,7 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
     ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
     m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
     PPicture pPic = pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx];
-    if (pPic->uiRefCount > 0) {
-      --pPic->uiRefCount;
-    }
+    --pPic->iRefCount;
     m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
     m_sReoderingStatus.iMinPOC = IMinInt32;
     --m_sReoderingStatus.iNumOfPicts;
@@ -1113,9 +1109,7 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
       ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
       m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
       PPicture pPic = pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx];
-      if (pPic->uiRefCount > 0) {
-        --pPic->uiRefCount;
-      }
+      --pPic->iRefCount;
       --m_sReoderingStatus.iNumOfPicts;
     }
     return;
@@ -1156,9 +1150,7 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
       ppDst[2] = m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].pData[2];
       m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPOC = IMinInt32;
       PPicture pPic = pPicBuff->ppPic[m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].iPicBuffIdx];
-      if (pPic->uiRefCount > 0) {
-        --pPic->uiRefCount;
-      }
+      --pPic->iRefCount;
       m_sPictInfoList[m_sReoderingStatus.iPictInfoIndex].bLastGOP = false;
       m_sReoderingStatus.iMinPOC = IMinInt32;
       --m_sReoderingStatus.iNumOfPicts;

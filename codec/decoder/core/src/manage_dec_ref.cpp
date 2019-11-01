@@ -80,7 +80,7 @@ static void SetUnRef (PPicture pRef) {
     pRef->uiSpatialId = -1;
     pRef->iSpsId = -1;
     pRef->bIsComplete = false;
-    pRef->uiRefCount = 0;
+    pRef->iRefCount = 0;
 
     if (pRef->eSliceType == I_SLICE) {
       return;
@@ -89,7 +89,7 @@ static void SetUnRef (PPicture pRef) {
     for (int32_t i = 0; i < MAX_DPB_COUNT; ++i) {
       for (int32_t list = 0; list < lists; ++list) {
         if (pRef->pRefPic[list][i] != NULL) {
-          pRef->pRefPic[list][i]->uiRefCount = 0;
+          pRef->pRefPic[list][i]->iRefCount = 0;
           pRef->pRefPic[list][i] = NULL;
         }
       }
@@ -784,9 +784,7 @@ static PPicture WelsDelShortFromList (PRefPic pRefPic, int32_t iFrameNum) {
       iMoveSize = pRefPic->uiShortRefCount[LIST_0] - i - 1;
       pPic = pRefPic->pShortRefList[LIST_0][i];
       pPic->bUsedAsRef = false;
-      if (pPic->uiRefCount > 0) {
-        --pPic->uiRefCount;
-      }
+      --pPic->iRefCount;
       pRefPic->pShortRefList[LIST_0][i] = NULL;
       if (iMoveSize > 0) {
         memmove (&pRefPic->pShortRefList[LIST_0][i], &pRefPic->pShortRefList[LIST_0][i + 1],
@@ -817,9 +815,7 @@ static PPicture WelsDelLongFromList (PRefPic pRefPic, uint32_t uiLongTermFrameId
       int32_t iMoveSize = pRefPic->uiLongRefCount[LIST_0] - i - 1;
       pPic->bUsedAsRef = false;
       pPic->bIsLongRef = false;
-      if (pPic->uiRefCount > 0) {
-        --pPic->uiRefCount;
-      }
+      --pPic->iRefCount;
       if (iMoveSize > 0) {
         memmove (&pRefPic->pLongRefList[LIST_0][i], &pRefPic->pLongRefList[LIST_0][i + 1],
                  iMoveSize * sizeof (PPicture)); //confirmed_safe_unsafe_usage
@@ -862,7 +858,7 @@ static int32_t AddShortTermToList (PRefPic pRefPic, PPicture pPic) {
   }
   pRefPic->pShortRefList[LIST_0][0] = pPic;
   pRefPic->uiShortRefCount[LIST_0]++;
-  ++pPic->uiRefCount;
+  ++pPic->iRefCount;
   return ERR_NONE;
 }
 
@@ -891,7 +887,7 @@ static int32_t AddLongTermToList (PRefPic pRefPic, PPicture pPic, int32_t iLongT
   }
 
   pRefPic->uiLongRefCount[LIST_0]++;
-  ++pPic->uiRefCount;
+  ++pPic->iRefCount;
   return ERR_NONE;
 }
 
