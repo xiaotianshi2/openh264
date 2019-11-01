@@ -52,8 +52,6 @@
 #include "measure_time.h"
 #include "d3d9_utils.h"
 
-#define _USE_READ_PICTURE_ 1
-
 using namespace std;
 
 #if defined (WINDOWS_PHONE)
@@ -199,12 +197,14 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
   int32_t iLastWidth = 0, iLastHeight = 0;
   int32_t iFrameCount = 0;
   int32_t iEndOfStreamFlag = 0;
-  int32_t num_of_frames_in_buffer = 0;
   pDecoder->SetOption (DECODER_OPTION_ERROR_CON_IDC, &iErrorConMethod);
   CUtils cOutputModule;
   double dElapsed = 0;
   uint8_t uLastSpsBuf[32];
   int32_t iLastSpsByteCount = 0;
+
+  int32_t iThreadCount = 1;
+  pDecoder->GetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   if (kpH264FileName) {
     pH264File = fopen (kpH264FileName, "rb");
@@ -283,32 +283,32 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
         goto label_exit;
       iSliceSize = static_cast<int32_t> (pInfo[2]);
     } else {
-#if defined(_USE_READ_PICTURE_)
-      uint8_t* uSpsPtr = NULL;
-      int32_t iSpsByteCount = 0;
-      iSliceSize = readPicture (pBuf, iFileSize, iBufPos, uSpsPtr, iSpsByteCount);
-      if (iLastSpsByteCount > 0 && iSpsByteCount > 0) {
-        if (iSpsByteCount != iLastSpsByteCount || memcmp (uSpsPtr, uLastSpsBuf, iLastSpsByteCount) != 0) {
-          //whenever new sequence is different from preceding sequence. All pending frames must be flushed out before the new sequence can start to decode.
-          FlushFrames (pDecoder, iTotal, pYuvFile, pOptionFile, iFrameCount, uiTimeStamp, iWidth, iHeight, iLastWidth,
-                       iLastHeight);
+      if (iThreadCount > 1) {
+        uint8_t* uSpsPtr = NULL;
+        int32_t iSpsByteCount = 0;
+        iSliceSize = readPicture (pBuf, iFileSize, iBufPos, uSpsPtr, iSpsByteCount);
+        if (iLastSpsByteCount > 0 && iSpsByteCount > 0) {
+          if (iSpsByteCount != iLastSpsByteCount || memcmp (uSpsPtr, uLastSpsBuf, iLastSpsByteCount) != 0) {
+            //whenever new sequence is different from preceding sequence. All pending frames must be flushed out before the new sequence can start to decode.
+            FlushFrames (pDecoder, iTotal, pYuvFile, pOptionFile, iFrameCount, uiTimeStamp, iWidth, iHeight, iLastWidth,
+                         iLastHeight);
+          }
         }
-      }
-      if (iSpsByteCount > 0 && uSpsPtr != NULL) {
-        if (iSpsByteCount > 32) iSpsByteCount = 32;
-        iLastSpsByteCount = iSpsByteCount;
-        memcpy (uLastSpsBuf, uSpsPtr, iSpsByteCount);
-      }
-#else
-      int i = 0;
-      for (i = 0; i < iFileSize; i++) {
-        if ((pBuf[iBufPos + i] == 0 && pBuf[iBufPos + i + 1] == 0 && pBuf[iBufPos + i + 2] == 0 && pBuf[iBufPos + i + 3] == 1
-             && i > 0) || (pBuf[iBufPos + i] == 0 && pBuf[iBufPos + i + 1] == 0 && pBuf[iBufPos + i + 2] == 1 && i > 0)) {
-          break;
+        if (iSpsByteCount > 0 && uSpsPtr != NULL) {
+          if (iSpsByteCount > 32) iSpsByteCount = 32;
+          iLastSpsByteCount = iSpsByteCount;
+          memcpy (uLastSpsBuf, uSpsPtr, iSpsByteCount);
         }
+      } else {
+        int i = 0;
+        for (i = 0; i < iFileSize; i++) {
+          if ((pBuf[iBufPos + i] == 0 && pBuf[iBufPos + i + 1] == 0 && pBuf[iBufPos + i + 2] == 0 && pBuf[iBufPos + i + 3] == 1
+               && i > 0) || (pBuf[iBufPos + i] == 0 && pBuf[iBufPos + i + 1] == 0 && pBuf[iBufPos + i + 2] == 1 && i > 0)) {
+            break;
+          }
+        }
+        iSliceSize = i;
       }
-      iSliceSize = i;
-#endif
     }
     if (iSliceSize < 4) { //too small size, no effective data, ignore
       iBufPos += iSliceSize;
@@ -330,8 +330,6 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
     pDecoder->GetOption (DECODER_OPTION_VCL_NAL, &iFeedbackVclNalInAu);
     int32_t iFeedbackTidInAu;
     pDecoder->GetOption (DECODER_OPTION_TEMPORAL_ID, &iFeedbackTidInAu);
-    int32_t iThreadCount = 1;
-    pDecoder->GetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 //~end for
 
     iStart = WelsTime();

@@ -112,7 +112,7 @@ class CWelsDecoder : public ISVCDecoder {
  public:
   DECODING_STATE DecodeFrame2WithCtx (PWelsDecoderContext pCtx, const unsigned char* kpSrc, const int kiSrcLen,
                                       unsigned char** ppDst, SBufferInfo* pDstInfo);
-  DECODING_STATE ParseFrame (SWelsDecoderThreadCTX& sThreadCtx);
+  DECODING_STATE ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx);
 
  private:
   welsCodecTrace*         m_pWelsTrace;

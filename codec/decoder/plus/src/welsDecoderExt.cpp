@@ -88,7 +88,6 @@ namespace WelsDec {
 *
 *   return: none
 ***************************************************************************/
-// 64k aliasing pretection
 DECLARE_PROCTHREAD (pThrProcInit, p) {
   SWelsDecThreadInfo* sThreadInfo = (SWelsDecThreadInfo*)p;
 #if defined(WIN32)
@@ -97,7 +96,7 @@ DECLARE_PROCTHREAD (pThrProcInit, p) {
   return sThreadInfo->pThrProcMain (p);
 }
 
-static DECODING_STATE  ConstructFrame (CWelsDecoder* pWelsDecoder, PWelsDecoderThreadCTX pThrCtx) {
+static DECODING_STATE  ConstructAccessUnit (CWelsDecoder* pWelsDecoder, PWelsDecoderThreadCTX pThrCtx) {
   int iRet = dsErrorFree;
   //WelsMutexLock (&pWelsDecoder->m_csDecoder);
   if (pThrCtx->pCtx->pLastThreadCtx != NULL) {
@@ -121,7 +120,7 @@ DECLARE_PROCTHREAD (pThrProcFrame, p) {
     WAIT_SEMAPHORE (&pThrCtx->sThreadInfo.sIsActivated, WELS_DEC_THREAD_WAIT_INFINITE);
     if (pThrCtx->sThreadInfo.uiCommand == WELS_DEC_THREAD_COMMAND_RUN) {
       CWelsDecoder* pWelsDecoder = (CWelsDecoder*)pThrCtx->threadCtxOwner;
-      ConstructFrame (pWelsDecoder, pThrCtx);
+      ConstructAccessUnit (pWelsDecoder, pThrCtx);
     } else if (pThrCtx->sThreadInfo.uiCommand == WELS_DEC_THREAD_COMMAND_ABORT) {
       break;
     }
@@ -368,6 +367,9 @@ int32_t CWelsDecoder::InitDecoder (const SDecodingParam* pParam) {
   WelsLog (&m_pWelsTrace->m_sLogCtx, WELS_LOG_INFO,
            "CWelsDecoder::init_decoder(), openh264 codec version = %s, ParseOnly = %d",
            VERSION_NUMBER, (int32_t)pParam->bParseOnly);
+  if (m_iThreadCount > 1 && pParam->bParseOnly) {
+    m_iThreadCount = 1;
+  }
   OpenDecoderThreads();
   //reset decoder context
   memset (&m_sDecoderStatistics, 0, sizeof (SDecoderStatistics));
@@ -470,7 +472,9 @@ long CWelsDecoder::SetOption (DECODER_OPTION eOptID, void* pOption) {
   if (eOptID == DECODER_OPTION_NUM_OF_THREADS) {
     if (pOption != NULL) {
       int32_t threadCount = * ((int32_t*)pOption);
-      if (threadCount > m_iCpuCount) {
+      if (threadCount <= 0) {
+        threadCount = 1;
+      } else if (threadCount > m_iCpuCount) {
         threadCount = m_iCpuCount;
       }
       if (threadCount > 3) {
@@ -1297,7 +1301,7 @@ DECODING_STATE CWelsDecoder::DecodeFrameEx (const unsigned char* kpSrc,
   return state;
 }
 
-DECODING_STATE CWelsDecoder::ParseFrame (SWelsDecoderThreadCTX& sThreadCtx) {
+DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx) {
   sThreadCtx.pCtx->bHasNewSps = false;
   sThreadCtx.pCtx->bParamSetsLostFlag = m_bParamSetsLostFlag;
   sThreadCtx.pCtx->bFreezeOutput = m_bFreezeOutput;
@@ -1370,7 +1374,7 @@ int CWelsDecoder::ThreadDecodeFrameInternal (const unsigned char* kpSrc, const i
   m_pDecThrCtx[signal].ppDst = ppDst;
   memcpy (&m_pDecThrCtx[signal].sDstInfo, pDstInfo, sizeof (SBufferInfo));
 
-  ParseFrame (m_pDecThrCtx[signal]);
+  ParseAccessUnit (m_pDecThrCtx[signal]);
   m_pLastDecThrCtx = &m_pDecThrCtx[signal];
   m_pDecThrCtx[signal].sThreadInfo.uiCommand = WELS_DEC_THREAD_COMMAND_RUN;
   RELEASE_SEMAPHORE (&m_pDecThrCtx[signal].sThreadInfo.sIsActivated);
