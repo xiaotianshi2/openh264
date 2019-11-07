@@ -751,6 +751,9 @@ DECODING_STATE CWelsDecoder::DecodeFrame2WithCtx (PWelsDecoderContext pDecContex
     }
 #endif//OUTPUT_BIT_STREAM
     pDecContext->bEndOfStreamFlag = false;
+    if (GetThreadCount (pDecContext) <= 0) {
+      pDecContext->uiDecodingTimeStamp = ++m_uiDecodeTimeStamp;
+    }
   } else {
     //For application MODE, the error detection should be added for safe.
     //But for CONSOLE MODE, when decoding LAST AU, kiSrcLen==0 && kpSrc==NULL.
@@ -1176,7 +1179,6 @@ DECODING_STATE CWelsDecoder::ReorderPicturesInDisplay (PWelsDecoderContext pDecC
     SBufferInfo* pDstInfo) {
   DECODING_STATE iRet = dsErrorFree;
   if (pDstInfo->iBufferStatus == 1) {
-    ++pDecContext->uiDecodingTimeStamp;
     m_bIsBaseline = pDecContext->pSps->uiProfileIdc == 66 || pDecContext->pSps->uiProfileIdc == 83;
     if (!m_bIsBaseline) {
       BufferingReadyPicture (pDecContext, ppDst, pDstInfo);
