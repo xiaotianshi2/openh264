@@ -1042,6 +1042,9 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
       m_sPictInfoList[i].iPOC = pCtx->pSliceHeader->iPicOrderCntLsb;
       m_sPictInfoList[i].uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
       m_sPictInfoList[i].iPicBuffIdx = pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->iPicBuffIdx;
+      if (pCtx->pThreadCtx == NULL) {
+        ++pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->iRefCount;
+      }
       m_sPictInfoList[i].bLastGOP = false;
       pDstInfo->iBufferStatus = 0;
       ++m_sReoderingStatus.iNumOfPicts;
