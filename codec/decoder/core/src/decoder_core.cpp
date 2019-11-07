@@ -2578,7 +2578,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       if (pThreadCtx != NULL) {
         pCtx->pDec->bIsUngroupedMultiSlice = false;
         pThreadCtx->pDec = pCtx->pDec;
-        ++pCtx->pDec->iRefCount;
+        if (GetThreadCount (pCtx) > 1) ++pCtx->pDec->iRefCount;
         uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
         for (uint32_t i = 0; i < uiMbHeight; ++i) {
           RESET_EVENT (&pCtx->pDec->pReadyEvent[i]);
