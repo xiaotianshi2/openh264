@@ -784,7 +784,6 @@ static PPicture WelsDelShortFromList (PRefPic pRefPic, int32_t iFrameNum) {
       iMoveSize = pRefPic->uiShortRefCount[LIST_0] - i - 1;
       pPic = pRefPic->pShortRefList[LIST_0][i];
       pPic->bUsedAsRef = false;
-      --pPic->iRefCount;
       pRefPic->pShortRefList[LIST_0][i] = NULL;
       if (iMoveSize > 0) {
         memmove (&pRefPic->pShortRefList[LIST_0][i], &pRefPic->pShortRefList[LIST_0][i + 1],
@@ -815,7 +814,6 @@ static PPicture WelsDelLongFromList (PRefPic pRefPic, uint32_t uiLongTermFrameId
       int32_t iMoveSize = pRefPic->uiLongRefCount[LIST_0] - i - 1;
       pPic->bUsedAsRef = false;
       pPic->bIsLongRef = false;
-      --pPic->iRefCount;
       if (iMoveSize > 0) {
         memmove (&pRefPic->pLongRefList[LIST_0][i], &pRefPic->pLongRefList[LIST_0][i + 1],
                  iMoveSize * sizeof (PPicture)); //confirmed_safe_unsafe_usage
@@ -858,7 +856,6 @@ static int32_t AddShortTermToList (PRefPic pRefPic, PPicture pPic) {
   }
   pRefPic->pShortRefList[LIST_0][0] = pPic;
   pRefPic->uiShortRefCount[LIST_0]++;
-  ++pPic->iRefCount;
   return ERR_NONE;
 }
 
@@ -887,7 +884,6 @@ static int32_t AddLongTermToList (PRefPic pRefPic, PPicture pPic, int32_t iLongT
   }
 
   pRefPic->uiLongRefCount[LIST_0]++;
-  ++pPic->iRefCount;
   return ERR_NONE;
 }
 
