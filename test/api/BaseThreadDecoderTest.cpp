@@ -6,11 +6,14 @@
 #include "BaseThreadDecoderTest.h"
 
 static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
-  // start code of a frame is {0, 0, 0, 1}
-  int zeroCount = 0;
+  // start code of a frame is {0, 0, 1} or {0, 0, 0, 1}
   char b;
 
   buf->Clear();
+  int32_t sps_count = 0;
+  int32_t non_idr_pict_count = 0;
+  int32_t idr_pict_count = 0;
+  int32_t pos = 0;
   for (;;) {
     file->read (&b, 1);
     if (file->gcount() != 1) { // end of file
@@ -21,26 +24,54 @@ static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
       return false;
     }
 
-    if (buf->Length() <= 4) {
-      continue;
-    }
-
-    if (zeroCount < 3) {
-      zeroCount = b != 0 ? 0 : zeroCount + 1;
-    } else {
-      if (b == 1) {
-        if (file->seekg (-4, file->cur).good()) {
-          if (-1 == buf->SetLength (buf->Length() - 4))
-            return false;
-          return true;
-        } else {
-          std::cout << "unable to seek file" << std::endl;
-          return false;
-        }
-      } else if (b == 0) {
-        zeroCount = 3;
+    uint8_t nal_unit_type = 0;
+    bool has4ByteStartCode = false;
+    bool has3ByteStartCode = false;
+    if (buf->Length() == 4) {
+      if (buf->data()[2] == 1) {
+        nal_unit_type = buf->data()[3] & 0x1F;
       } else {
-        zeroCount = 0;
+        nal_unit_type = buf->data()[4] & 0x1F;
+      }
+    } else if (buf->Length() >= 8) {
+      has3ByteStartCode = buf->data()[buf->Length() - 4] == 0 && buf->data()[buf->Length() - 3] == 0
+                          && buf->data()[buf->Length() - 2] == 1;
+      if (!has3ByteStartCode) {
+        has4ByteStartCode = buf->data()[buf->Length() - 5] == 0 && buf->data()[buf->Length() - 4] == 0
+                            && buf->data()[buf->Length() - 3] == 0 && buf->data()[buf->Length() - 2] == 1;
+      }
+      if (has3ByteStartCode || has4ByteStartCode) {
+        nal_unit_type = buf->data()[buf->Length() - 1] & 0x1F;
+      }
+    }
+    int32_t startcode_len_plus_one = has4ByteStartCode ? 5 : 4;
+    if (nal_unit_type == 1) {
+      if (++non_idr_pict_count == 1 && idr_pict_count == 1) {
+        file->seekg (-startcode_len_plus_one, file->cur).good();
+        buf->SetLength (buf->Length() - startcode_len_plus_one);
+        return true;
+      }
+      if (non_idr_pict_count == 2) {
+        file->seekg (-startcode_len_plus_one, file->cur).good();
+        buf->SetLength (buf->Length() - startcode_len_plus_one);
+        return true;
+      }
+    } else if (nal_unit_type == 5) {
+      if (++idr_pict_count == 1 && non_idr_pict_count == 1) {
+        file->seekg (-startcode_len_plus_one, file->cur).good();
+        buf->SetLength (buf->Length() - startcode_len_plus_one);
+        return true;
+      }
+      if (idr_pict_count == 2) {
+        file->seekg (-startcode_len_plus_one, file->cur).good();
+        buf->SetLength (buf->Length() - startcode_len_plus_one);
+        return true;
+      }
+    } else if (nal_unit_type == 7) {
+      if ((++sps_count == 1) && (non_idr_pict_count == 1 || idr_pict_count == 1)) {
+        file->seekg (-startcode_len_plus_one, file->cur).good();
+        buf->SetLength (buf->Length() - startcode_len_plus_one);
+        return true;
       }
     }
   }
