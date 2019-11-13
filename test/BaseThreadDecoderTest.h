@@ -30,7 +30,7 @@ class BaseThreadDecoderTest {
   BaseThreadDecoderTest();
   int32_t SetUp();
   void TearDown();
-  bool DecodeFile (const char* fileName, Callback* cbk);
+  bool ThreadDecodeFile (const char* fileName, Callback* cbk);
 
   bool Open (const char* fileName);
   bool DecodeNextFrame (Callback* cbk);
@@ -42,6 +42,12 @@ class BaseThreadDecoderTest {
 
   std::ifstream file_;
   BufferedData buf_;
+  BufferedData buf[16];
+  uint8_t* pData[3];
+  uint8_t* pDst[3];
+  int32_t iBufIndex;
+  int32_t iThreadCount;
+  uint64_t uiTimeStamp;
   enum {\
         OpenFile,
         Decoding,

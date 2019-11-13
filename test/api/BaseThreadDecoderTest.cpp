@@ -13,7 +13,7 @@ static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
   int32_t sps_count = 0;
   int32_t non_idr_pict_count = 0;
   int32_t idr_pict_count = 0;
-  int32_t pos = 0;
+  int32_t zeroCount = 0;
   for (;;) {
     file->read (&b, 1);
     if (file->gcount() != 1) { // end of file
@@ -23,28 +23,73 @@ static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
       std::cout << "unable to allocate memory" << std::endl;
       return false;
     }
-
+    if (buf->Length() < 5) {
+      continue;
+    }
     uint8_t nal_unit_type = 0;
     bool has4ByteStartCode = false;
     bool has3ByteStartCode = false;
-    if (buf->Length() == 4) {
+    int32_t startcode_len_plus_one = 0;
+    if (buf->Length() == 5) {
       if (buf->data()[2] == 1) {
         nal_unit_type = buf->data()[3] & 0x1F;
       } else {
         nal_unit_type = buf->data()[4] & 0x1F;
       }
-    } else if (buf->Length() >= 8) {
-      has3ByteStartCode = buf->data()[buf->Length() - 4] == 0 && buf->data()[buf->Length() - 3] == 0
-                          && buf->data()[buf->Length() - 2] == 1;
-      if (!has3ByteStartCode) {
-        has4ByteStartCode = buf->data()[buf->Length() - 5] == 0 && buf->data()[buf->Length() - 4] == 0
-                            && buf->data()[buf->Length() - 3] == 0 && buf->data()[buf->Length() - 2] == 1;
+    } else {
+      if (zeroCount < 2) {
+        zeroCount = b != 0 ? 0 : zeroCount + 1;
       }
-      if (has3ByteStartCode || has4ByteStartCode) {
-        nal_unit_type = buf->data()[buf->Length() - 1] & 0x1F;
+      if (zeroCount == 2) {
+        file->read (&b, 1);
+        if (file->gcount() != 1) { // end of file
+          return true;
+        }
+        if (!buf->PushBack (b)) {
+          std::cout << "unable to allocate memory" << std::endl;
+          return false;
+        }
+        if (b == 1) { //0x000001
+          file->read (&b, 1);
+          if (file->gcount() != 1) { // end of file
+            return true;
+          }
+          if (!buf->PushBack (b)) {
+            std::cout << "unable to allocate memory" << std::endl;
+            return false;
+          }
+          nal_unit_type = b & 0x1F;
+          startcode_len_plus_one = 4;
+          zeroCount = 0;
+        } else if (b == 0) {
+          file->read (&b, 1);
+          if (file->gcount() != 1) { // end of file
+            return true;
+          }
+          if (!buf->PushBack (b)) {
+            std::cout << "unable to allocate memory" << std::endl;
+            return false;
+          }
+          if (b == 1) { //0x00000001
+            file->read (&b, 1);
+            if (file->gcount() != 1) { // end of file
+              return true;
+            }
+            if (!buf->PushBack (b)) {
+              std::cout << "unable to allocate memory" << std::endl;
+              return false;
+            }
+            nal_unit_type = b & 0x1F;
+            startcode_len_plus_one = 5;
+            zeroCount = 0;
+          } else {
+            zeroCount = 0;
+          }
+        } else {
+          zeroCount = 0;
+        }
       }
     }
-    int32_t startcode_len_plus_one = has4ByteStartCode ? 5 : 4;
     if (nal_unit_type == 1) {
       if (++non_idr_pict_count == 1 && idr_pict_count == 1) {
         file->seekg (-startcode_len_plus_one, file->cur).good();
@@ -78,7 +123,7 @@ static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
 }
 
 BaseThreadDecoderTest::BaseThreadDecoderTest()
-  : decoder_ (NULL), decodeStatus_ (OpenFile) {}
+  : decoder_ (NULL), decodeStatus_ (OpenFile), iThreadCount (0), iBufIndex (0), uiTimeStamp (0) {}
 
 int32_t BaseThreadDecoderTest::SetUp() {
   long rv = WelsCreateDecoder (&decoder_);
@@ -94,6 +139,9 @@ int32_t BaseThreadDecoderTest::SetUp() {
   decParam.eEcActiveIdc = ERROR_CON_SLICE_COPY;
   decParam.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
 
+  iThreadCount = 3;
+  decoder_->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
+
   rv = decoder_->Initialize (&decParam);
   EXPECT_EQ (0, rv);
   return (int32_t)rv;
@@ -108,39 +156,42 @@ void BaseThreadDecoderTest::TearDown() {
 
 
 void BaseThreadDecoderTest::DecodeFrame (const uint8_t* src, size_t sliceSize, Callback* cbk) {
-  uint8_t* data[3];
   SBufferInfo bufInfo;
-  memset (data, 0, sizeof (data));
+  memset (pData, 0, sizeof (pData));
   memset (&bufInfo, 0, sizeof (SBufferInfo));
+  bufInfo.uiInBsTimeStamp = ++uiTimeStamp;
 
-  DECODING_STATE rv = decoder_->DecodeFrame2 (src, (int) sliceSize, data, &bufInfo);
+  DECODING_STATE rv = decoder_->DecodeFrameNoDelay (src, (int) sliceSize, pData, &bufInfo);
   ASSERT_TRUE (rv == dsErrorFree);
 
   if (bufInfo.iBufferStatus == 1 && cbk != NULL) {
+    pDst[0] = pData[0];
+    pDst[1] = pData[1];
+    pDst[2] = pData[2];
     const Frame frame = {
       {
         // y plane
-        data[0],
+        pDst[0],
         bufInfo.UsrData.sSystemBuffer.iWidth,
         bufInfo.UsrData.sSystemBuffer.iHeight,
         bufInfo.UsrData.sSystemBuffer.iStride[0]
       },
       {
         // u plane
-        data[1],
+        pDst[1],
         bufInfo.UsrData.sSystemBuffer.iWidth / 2,
         bufInfo.UsrData.sSystemBuffer.iHeight / 2,
         bufInfo.UsrData.sSystemBuffer.iStride[1]
       },
       {
         // v plane
-        data[2],
+        pDst[2],
         bufInfo.UsrData.sSystemBuffer.iWidth / 2,
         bufInfo.UsrData.sSystemBuffer.iHeight / 2,
         bufInfo.UsrData.sSystemBuffer.iStride[1]
       },
     };
-    cbk->onDecodeFrame (frame);
+    //cbk->onDecodeFrame (frame);
   }
 }
 void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
@@ -179,32 +230,35 @@ void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
     cbk->onDecodeFrame (frame);
   }
 }
-bool BaseThreadDecoderTest::DecodeFile (const char* fileName, Callback* cbk) {
+bool BaseThreadDecoderTest::ThreadDecodeFile (const char* fileName, Callback* cbk) {
   std::ifstream file (fileName, std::ios::in | std::ios::binary);
   if (!file.is_open())
     return false;
 
-  BufferedData buf;
+  iBufIndex = 0;
   while (true) {
-    if (false == ReadFrame (&file, &buf))
+    if (false == ReadFrame (&file, &buf[iBufIndex]))
       return false;
     if (::testing::Test::HasFatalFailure()) {
       return false;
     }
-    if (buf.Length() == 0) {
+    if (buf[iBufIndex].Length() == 0) {
       break;
     }
-    DecodeFrame (buf.data(), buf.Length(), cbk);
+    DecodeFrame (buf[iBufIndex].data(), buf[iBufIndex].Length(), cbk);
     if (::testing::Test::HasFatalFailure()) {
       return false;
+    }
+    if (iThreadCount > 1) {
+      if (++iBufIndex >= 16) {
+        iBufIndex = 0;
+      }
     }
   }
 
   int32_t iEndOfStreamFlag = 1;
   decoder_->SetOption (DECODER_OPTION_END_OF_STREAM, &iEndOfStreamFlag);
 
-  // Get pending last frame
-  DecodeFrame (NULL, 0, cbk);
   // Flush out last frames in decoder buffer
   int32_t num_of_frames_in_buffer = 0;
   decoder_->GetOption (DECODER_OPTION_NUM_OF_FRAMES_REMAINING_IN_BUFFER, &num_of_frames_in_buffer);
