@@ -139,7 +139,7 @@ int32_t BaseThreadDecoderTest::SetUp() {
   decParam.eEcActiveIdc = ERROR_CON_SLICE_COPY;
   decParam.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
 
-  iThreadCount = 3;
+  iThreadCount = (2 + rand()) % 3;
   decoder_->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   rv = decoder_->Initialize (&decParam);
@@ -236,6 +236,7 @@ bool BaseThreadDecoderTest::ThreadDecodeFile (const char* fileName, Callback* cb
     return false;
 
   iBufIndex = 0;
+  uiTimeStamp = 0;
   while (true) {
     if (false == ReadFrame (&file, &buf[iBufIndex]))
       return false;
