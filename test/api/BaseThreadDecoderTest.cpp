@@ -227,7 +227,7 @@ void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
         bufInfo.UsrData.sSystemBuffer.iStride[1]
       },
     };
-    cbk->onDecodeFrame (frame);
+    //cbk->onDecodeFrame (frame);
   }
 }
 bool BaseThreadDecoderTest::ThreadDecodeFile (const char* fileName, Callback* cbk) {
