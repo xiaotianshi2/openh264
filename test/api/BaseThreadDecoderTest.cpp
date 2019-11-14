@@ -140,7 +140,7 @@ int32_t BaseThreadDecoderTest::SetUp() {
   decParam.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
   int random = rand();
   if (random < 0) random = -random;
-  iThreadCount = (2 + random) % 3;
+  iThreadCount = (2 + random) % 4;
   decoder_->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   rv = decoder_->Initialize (&decParam);
@@ -196,33 +196,35 @@ void BaseThreadDecoderTest::DecodeFrame (const uint8_t* src, size_t sliceSize, C
   }
 }
 void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
-  uint8_t* data[3];
   SBufferInfo bufInfo;
-  memset (data, 0, sizeof (data));
+  memset (pData, 0, sizeof (pData));
   memset (&bufInfo, 0, sizeof (SBufferInfo));
 
-  DECODING_STATE rv = decoder_->FlushFrame (data, &bufInfo);
+  DECODING_STATE rv = decoder_->FlushFrame (pData, &bufInfo);
   ASSERT_TRUE (rv == dsErrorFree);
 
   if (bufInfo.iBufferStatus == 1 && cbk != NULL) {
+    pDst[0] = pData[0];
+    pDst[1] = pData[1];
+    pDst[2] = pData[2];
     const Frame frame = {
       {
         // y plane
-        data[0],
+        pDst[0],
         bufInfo.UsrData.sSystemBuffer.iWidth,
         bufInfo.UsrData.sSystemBuffer.iHeight,
         bufInfo.UsrData.sSystemBuffer.iStride[0]
       },
       {
         // u plane
-        data[1],
+        pDst[1],
         bufInfo.UsrData.sSystemBuffer.iWidth / 2,
         bufInfo.UsrData.sSystemBuffer.iHeight / 2,
         bufInfo.UsrData.sSystemBuffer.iStride[1]
       },
       {
         // v plane
-        data[2],
+        pDst[2],
         bufInfo.UsrData.sSystemBuffer.iWidth / 2,
         bufInfo.UsrData.sSystemBuffer.iHeight / 2,
         bufInfo.UsrData.sSystemBuffer.iStride[1]
