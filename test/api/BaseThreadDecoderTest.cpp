@@ -138,8 +138,9 @@ int32_t BaseThreadDecoderTest::SetUp() {
   decParam.uiTargetDqLayer = UCHAR_MAX;
   decParam.eEcActiveIdc = ERROR_CON_SLICE_COPY;
   decParam.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
-
-  iThreadCount = (2 + rand()) % 3;
+  int random = rand();
+  if (random < 0) random = -random;
+  iThreadCount = (2 + random) % 3;
   decoder_->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   rv = decoder_->Initialize (&decParam);
