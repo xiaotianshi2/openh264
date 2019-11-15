@@ -25,6 +25,7 @@ class BaseThreadDecoderTest {
 
   struct Callback {
     virtual void onDecodeFrame (const Frame& frame) = 0;
+    virtual void onHashFrame (uint8_t* pData, const int32_t& width, const int32_t& height) = 0;
   };
 
   BaseThreadDecoderTest();
@@ -43,11 +44,14 @@ class BaseThreadDecoderTest {
   std::ifstream file_;
   BufferedData buf_;
   BufferedData buf[16];
+  SBufferInfo sBufInfo;
   uint8_t* pData[3];
   uint8_t* pDst[3];
   int32_t iBufIndex;
   int32_t iThreadCount;
   uint64_t uiTimeStamp;
+  FILE* pYuvFile;
+  bool bIsFirstFrame;
   enum {\
         OpenFile,
         Decoding,

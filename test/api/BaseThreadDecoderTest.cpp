@@ -5,6 +5,46 @@
 #include "utils/BufferedData.h"
 #include "BaseThreadDecoderTest.h"
 
+static void Write2File (FILE* pFp, unsigned char* pData[3], int iStride[2], int iWidth, int iHeight) {
+  int   i;
+  unsigned char*  pPtr = NULL;
+
+  pPtr = pData[0];
+  for (i = 0; i < iHeight; i++) {
+    fwrite (pPtr, 1, iWidth, pFp);
+    pPtr += iStride[0];
+  }
+
+  iHeight = iHeight / 2;
+  iWidth = iWidth / 2;
+  pPtr = pData[1];
+  for (i = 0; i < iHeight; i++) {
+    fwrite (pPtr, 1, iWidth, pFp);
+    pPtr += iStride[1];
+  }
+
+  pPtr = pData[2];
+  for (i = 0; i < iHeight; i++) {
+    fwrite (pPtr, 1, iWidth, pFp);
+    pPtr += iStride[1];
+  }
+}
+
+static void Process (void* pDst[3], SBufferInfo* pInfo, FILE* pFp) {
+
+  int iRet = 0;
+
+  if (pFp && pDst[0] && pDst[1] && pDst[2] && pInfo) {
+    int iStride[2];
+    int iWidth = pInfo->UsrData.sSystemBuffer.iWidth;
+    int iHeight = pInfo->UsrData.sSystemBuffer.iHeight;
+    iStride[0] = pInfo->UsrData.sSystemBuffer.iStride[0];
+    iStride[1] = pInfo->UsrData.sSystemBuffer.iStride[1];
+
+    Write2File (pFp, (unsigned char**)pDst, iStride, iWidth, iHeight);
+  }
+}
+
 static bool ReadFrame (std::ifstream* file, BufferedData* buf) {
   // start code of a frame is {0, 0, 1} or {0, 0, 0, 1}
   char b;
@@ -169,6 +209,11 @@ void BaseThreadDecoderTest::DecodeFrame (const uint8_t* src, size_t sliceSize, C
     pDst[0] = pData[0];
     pDst[1] = pData[1];
     pDst[2] = pData[2];
+    if (bIsFirstFrame) {
+      sBufInfo = bufInfo;
+      bIsFirstFrame = false;
+    }
+    Process ((void**)pDst, &bufInfo, pYuvFile);
     const Frame frame = {
       {
         // y plane
@@ -207,6 +252,7 @@ void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
     pDst[0] = pData[0];
     pDst[1] = pData[1];
     pDst[2] = pData[2];
+    Process ((void**)pDst, &bufInfo, pYuvFile);
     const Frame frame = {
       {
         // y plane
@@ -238,8 +284,15 @@ bool BaseThreadDecoderTest::ThreadDecodeFile (const char* fileName, Callback* cb
   if (!file.is_open())
     return false;
 
+  std::string outFileName = std::string (fileName);
+  size_t pos = outFileName.find_last_of (".");
+  outFileName = outFileName.substr (0, pos) + std::string (".yuv");
+  pYuvFile = fopen (outFileName.c_str(), "wb");
+
   iBufIndex = 0;
   uiTimeStamp = 0;
+  memset (&sBufInfo, 0, sizeof (SBufferInfo));
+  bIsFirstFrame = true;
   while (true) {
     if (false == ReadFrame (&file, &buf[iBufIndex]))
       return false;
@@ -269,6 +322,21 @@ bool BaseThreadDecoderTest::ThreadDecodeFile (const char* fileName, Callback* cb
   for (int32_t i = 0; i < num_of_frames_in_buffer; ++i) {
     FlushFrame (cbk);
   }
+  fclose (pYuvFile);
+  /*pYuvFile = fopen (outFileName.c_str(), "rb");
+  int32_t buf_size = sBufInfo.UsrData.sSystemBuffer.iWidth * sBufInfo.UsrData.sSystemBuffer.iHeight * 2 / 3;
+  if (buf_size > 0) {
+    uint8_t* pBuf = new uint8_t[buf_size];
+    size_t read_size = 0;
+    do {
+      read_size = fread (pBuf, 1, buf_size, pYuvFile);
+      if (read_size == buf_size) {
+        cbk->onHashFrame (pBuf, sBufInfo.UsrData.sSystemBuffer.iWidth, sBufInfo.UsrData.sSystemBuffer.iHeight);
+      }
+    } while (read_size > 0);
+    delete[] pBuf;
+  }
+  fclose (pYuvFile);*/
   return true;
 }
 

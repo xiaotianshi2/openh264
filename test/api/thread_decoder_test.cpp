@@ -68,6 +68,16 @@ class ThreadDecoderOutputTest : public ::testing::WithParamInterface<FileParam>,
     UpdateHashFromPlane (&ctx_, u.data, u.width, u.height, u.stride);
     UpdateHashFromPlane (&ctx_, v.data, v.width, v.height, v.stride);
   }
+  virtual void onHashFrame (uint8_t* pData, const int32_t& width, const int32_t& height) {
+    int32_t ySize = width * height;
+    int32_t uSize = ySize >> 2;
+    uint8_t* pY = pData;
+    uint8_t* pU = pY + ySize;
+    uint8_t* pV = pU + uSize;
+    UpdateHashFromPlane (&ctx_, pY, width, height, width);
+    UpdateHashFromPlane (&ctx_, pU, width / 2, height / 2, width / 2);
+    UpdateHashFromPlane (&ctx_, pV, width / 2, height / 2, width / 2);
+  }
  protected:
   SHA1Context ctx_;
 };
