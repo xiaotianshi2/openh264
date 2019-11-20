@@ -68,6 +68,15 @@ int    g_iDecodedFrameNum = 0;
 #endif
 //using namespace WelsDec;
 
+void BufferReadyCallback (void** pDst, void* pDstInfo, void* outputOpt) {
+  SBufferInfo* pBufInfo = (SBufferInfo*)pDstInfo;
+  if (outputOpt != NULL) {
+    FILE* output = (FILE*)outputOpt;
+    CUtils cOutputModule;
+    cOutputModule.Process (pDst, pBufInfo, output);
+  }
+}
+
 int32_t readPicture (uint8_t* pBuf, const int32_t& iFileSize, const int32_t& bufPos, uint8_t*& pSpsBuf,
                      int32_t& sps_byte_count) {
   int32_t bytes_available = iFileSize - bufPos;
@@ -198,6 +207,8 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
   int32_t iFrameCount = 0;
   int32_t iEndOfStreamFlag = 0;
   pDecoder->SetOption (DECODER_OPTION_ERROR_CON_IDC, &iErrorConMethod);
+  WelsDecoderBufferReadyCallback buffer_ready_callback_function = BufferReadyCallback;
+  pDecoder->SetOption (DECODER_OPTION_BUFFER_READY_CALLBACK, (void*)&buffer_ready_callback_function);
   CUtils cOutputModule;
   double dElapsed = 0;
   uint8_t uLastSpsBuf[32];
@@ -230,6 +241,9 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
   } else {
     fprintf (stderr, "Can not find any output file to write..\n");
     // any options
+  }
+  if (pYuvFile != NULL) {
+    pDecoder->SetOption (DECODER_OPTION_BUFFER_READY_CALLBACK_OUTPUT_OPT, (void*)pYuvFile);
   }
 
   if (pOptionFileName) {

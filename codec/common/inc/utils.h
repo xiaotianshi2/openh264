@@ -56,6 +56,15 @@ typedef struct TagLogContext {
   void* pCodecInstance;
 } SLogContext;
 
+// wels decoder buffer ready output
+typedef void (*PWelsDecoderBufferReadyCallbackFunc) (void* pCtx, void** pDst, void* pDstInfo);
+
+typedef struct TagDecoderBufferReadyCtx {
+  PWelsDecoderBufferReadyCallbackFunc pfCb;
+  void* pBufferReadyCtx;
+  void* pCodecInstance;
+} SDecoderBufferReadyCtx;
+
 
 #ifdef __GNUC__
 extern void WelsLog (SLogContext* pCtx, int32_t iLevel, const char* kpFmt, ...) __attribute__ ((__format__ (__printf__,

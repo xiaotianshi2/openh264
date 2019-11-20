@@ -163,6 +163,10 @@ CWelsDecoder::CWelsDecoder (void)
 
     WelsLog (&m_pWelsTrace->m_sLogCtx, WELS_LOG_INFO, "CWelsDecoder::CWelsDecoder() entry");
   }
+  m_pWelsBufferReady = new WelsDecoderBufferReady();
+  if (m_pWelsBufferReady != NULL) {
+    m_pWelsBufferReady->SetCodecInstance (this);
+  }
 
   ResetReorderingPictureBuffers (&m_sReoderingStatus, m_sPictInfoList, true);
 
@@ -249,6 +253,10 @@ CWelsDecoder::~CWelsDecoder() {
     delete m_pWelsTrace;
     m_pWelsTrace = NULL;
   }
+  if (m_pWelsBufferReady != NULL) {
+    delete m_pWelsBufferReady;
+    m_pWelsBufferReady = NULL;
+  }
   if (m_pDecThrCtx != NULL) {
     delete[] m_pDecThrCtx;
     m_pDecThrCtx = NULL;
@@ -258,6 +266,9 @@ CWelsDecoder::~CWelsDecoder() {
 long CWelsDecoder::Initialize (const SDecodingParam* pParam) {
   int iRet = ERR_NONE;
   if (m_pWelsTrace == NULL) {
+    return cmMallocMemeError;
+  }
+  if (m_pWelsBufferReady == NULL) {
     return cmMallocMemeError;
   }
 
@@ -550,6 +561,18 @@ long CWelsDecoder::SetOption (DECODER_OPTION eOptID, void* pOption) {
       if (m_pWelsTrace) {
         void* ctx = * ((void**)pOption);
         m_pWelsTrace->SetTraceCallbackContext (ctx);
+      }
+      return cmResultSuccess;
+    } else if (eOptID == DECODER_OPTION_BUFFER_READY_CALLBACK) {
+      if (m_pWelsBufferReady) {
+        WelsDecoderBufferReadyCallback callback = * ((WelsDecoderBufferReadyCallback*)pOption);
+        m_pWelsBufferReady->SetDecoderBufferReadyCallback (callback);
+      }
+      return cmResultSuccess;
+    } else if (eOptID == DECODER_OPTION_BUFFER_READY_CALLBACK_OUTPUT_OPT) {
+      if (m_pWelsBufferReady) {
+        void* outputOpt = * ((void**)pOption);
+        m_pWelsBufferReady->SetDecoderBufferReadyOutputOpt (outputOpt);
       }
       return cmResultSuccess;
     } else if (eOptID == DECODER_OPTION_GET_STATISTICS) {
@@ -871,7 +894,14 @@ DECODING_STATE CWelsDecoder::DecodeFrame2WithCtx (PWelsDecoderContext pDecContex
     if (GetThreadCount (pDecContext) >= 1) {
       WAIT_EVENT (&m_sReleaseBufferEvent, WELS_DEC_THREAD_WAIT_INFINITE);
       RESET_EVENT (&m_sBufferingEvent);
+#if 1
       BufferingReadyPicture (pDecContext, ppDst, pDstInfo);
+#else
+      ReorderPicturesInDisplay (pDecContext, ppDst, pDstInfo);
+      if (m_pWelsBufferReady != NULL && pDstInfo->iBufferStatus == 1) {
+        m_pWelsBufferReady->m_sCtx.pfCb (m_pWelsBufferReady->m_sCtx.pBufferReadyCtx, (void**)ppDst, pDstInfo);
+      }
+#endif
       SET_EVENT (&m_sBufferingEvent);
     } else {
       ReorderPicturesInDisplay (pDecContext, ppDst, pDstInfo);
@@ -897,7 +927,14 @@ DECODING_STATE CWelsDecoder::DecodeFrame2WithCtx (PWelsDecoderContext pDecContex
   if (GetThreadCount (pDecContext) >= 1) {
     WAIT_EVENT (&m_sReleaseBufferEvent, WELS_DEC_THREAD_WAIT_INFINITE);
     RESET_EVENT (&m_sBufferingEvent);
+#if 1
     BufferingReadyPicture (pDecContext, ppDst, pDstInfo);
+#else
+    ReorderPicturesInDisplay (pDecContext, ppDst, pDstInfo);
+    if (m_pWelsBufferReady != NULL && pDstInfo->iBufferStatus == 1) {
+      m_pWelsBufferReady->m_sCtx.pfCb (m_pWelsBufferReady->m_sCtx.pBufferReadyCtx, (void**)ppDst, pDstInfo);
+    }
+#endif
     SET_EVENT (&m_sBufferingEvent);
   } else {
     ReorderPicturesInDisplay (pDecContext, ppDst, pDstInfo);

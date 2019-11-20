@@ -160,6 +160,8 @@ typedef enum {
   DECODER_OPTION_TRACE_LEVEL,
   DECODER_OPTION_TRACE_CALLBACK,        ///< a void (*)(void* context, int level, const char* message) function which receives log messages
   DECODER_OPTION_TRACE_CALLBACK_CONTEXT,///< context info of trace callbac
+  DECODER_OPTION_BUFFER_READY_CALLBACK, ///< a void (*)(void* pDstInfo, unsigned char ** pDst) function receives ready picture buffer
+  DECODER_OPTION_BUFFER_READY_CALLBACK_OUTPUT_OPT, ///< output option of ready picture buffer callbac
 
   DECODER_OPTION_GET_STATISTICS,        ///< feedback decoder statistics
   DECODER_OPTION_GET_SAR_INFO,          ///< feedback decoder Sample Aspect Ratio info in Vui

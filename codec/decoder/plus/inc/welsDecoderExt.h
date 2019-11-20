@@ -46,6 +46,7 @@
 #include "codec_app_def.h"
 #include "decoder_context.h"
 #include "welsCodecTrace.h"
+#include "wels_decoder_buffer_ready.h"
 #include "cpu.h"
 
 class ISVCDecoder;
@@ -116,6 +117,7 @@ class CWelsDecoder : public ISVCDecoder {
 
  private:
   welsCodecTrace*         m_pWelsTrace;
+  WelsDecoderBufferReady* m_pWelsBufferReady;
   uint32_t                m_uiDecodeTimeStamp;
   bool                    m_bIsBaseline;
   int32_t                 m_iCpuCount;
