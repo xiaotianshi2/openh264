@@ -571,7 +571,7 @@ long CWelsDecoder::SetOption (DECODER_OPTION eOptID, void* pOption) {
       return cmResultSuccess;
     } else if (eOptID == DECODER_OPTION_BUFFER_READY_CALLBACK_OUTPUT_OPT) {
       if (m_pWelsBufferReady) {
-        void* outputOpt = * ((void**)pOption);
+        void* outputOpt = pOption;
         m_pWelsBufferReady->SetDecoderBufferReadyOutputOpt (outputOpt);
       }
       return cmResultSuccess;
