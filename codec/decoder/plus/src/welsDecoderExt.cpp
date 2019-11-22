@@ -1076,11 +1076,17 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
   }
   if (!m_bIsBaseline && m_sReoderingStatus.iLastGOPRemainPicts > 0) {
     m_sReoderingStatus.iMinPOC = IMinInt32;
+    int32_t firstValidIdx = -1;
     for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
       if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].bLastGOP) {
         m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
         m_sReoderingStatus.iPictInfoIndex = i;
+        firstValidIdx = i;
+        break;
       }
+    }
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+      if (i == firstValidIdx) continue;
       if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC
           && m_sPictInfoList[i].bLastGOP) {
         m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
