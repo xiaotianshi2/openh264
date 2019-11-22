@@ -2822,10 +2822,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       if (iThreadCount >= 1) {
         int32_t  id = pThreadCtx->sThreadInfo.uiThrNum;
         for (int32_t i = 0; i < iThreadCount; ++i) {
-          if (i != id) {
-            if (pThreadCtx[i - id].pCtx->uiDecodingTimeStamp < pCtx->uiDecodingTimeStamp) {
-              WAIT_EVENT (&pThreadCtx[i - id].sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
-            }
+          if (i == id || pThreadCtx[i - id].pCtx->uiDecodingTimeStamp == 0) continue;
+          if (pThreadCtx[i - id].pCtx->uiDecodingTimeStamp < pCtx->uiDecodingTimeStamp) {
+            WAIT_EVENT (&pThreadCtx[i - id].sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
           }
         }
         pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
