@@ -2823,10 +2823,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         int32_t  id = pThreadCtx->sThreadInfo.uiThrNum;
         for (int32_t i = 0; i < iThreadCount; ++i) {
           if (i != id) {
-            if (pThreadCtx[i - id].sSliceDecodeStart.isSignaled) {
-              while (pThreadCtx[i - id].pCtx->uiDecodingTimeStamp < pCtx->uiDecodingTimeStamp) {
-                WelsSleep (1);
-              }
+            if (pThreadCtx[i - id].pCtx->uiDecodingTimeStamp < pCtx->uiDecodingTimeStamp) {
+              WAIT_EVENT (&pThreadCtx[i - id].sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
             }
           }
         }
@@ -2892,9 +2890,9 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         }
       }
     }
-  }
-  if (iThreadCount > 1) {
-    SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+    if (iThreadCount > 1) {
+      SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+    }
   }
   return ERR_NONE;
 }
