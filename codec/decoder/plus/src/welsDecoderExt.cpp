@@ -1104,16 +1104,17 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
   }
   if (m_sReoderingStatus.iNumOfPicts && m_bIsBaseline) {
     uint32_t uiDecodingTimeStamp = 0;
+    int32_t firstValidIdx = -1;
     for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
       if (m_sPictInfoList[i].iPOC > IMinInt32) {
         uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
         m_sReoderingStatus.iPictInfoIndex = i;
+        firstValidIdx = i;
         break;
       }
     }
-    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
-      if (m_sReoderingStatus.iPictInfoIndex != i && m_sPictInfoList[i].iPOC > IMinInt32
-          && m_sPictInfoList[i].sBufferInfo.uiInBsTimeStamp < uiDecodingTimeStamp) {
+    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex, i != firstValidIdx; ++i) {
+      if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].uiDecodingTimeStamp < uiDecodingTimeStamp) {
         uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
         m_sReoderingStatus.iPictInfoIndex = i;
       }
