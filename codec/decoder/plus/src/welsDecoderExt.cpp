@@ -142,7 +142,8 @@ CWelsDecoder::CWelsDecoder (void)
     m_bFreezeOutput (false),
     m_DecCtxActiveCount (0),
     m_pDecThrCtx (NULL),
-    m_pLastDecThrCtx (NULL) {
+    m_pLastDecThrCtx (NULL),
+    m_iLastBufferedIdx (0) {
 #ifdef OUTPUT_BIT_STREAM
   char chFileName[1024] = { 0 };  //for .264
   int iBufUsed = 0;
@@ -1058,6 +1059,7 @@ void CWelsDecoder::BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned cha
       m_sPictInfoList[i].iPicBuffIdx = pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->iPicBuffIdx;
       if (GetThreadCount (pCtx) <= 1) ++pCtx->pLastDecPicInfo->pPreviousDecodedPictureInDpb->iRefCount;
       m_sPictInfoList[i].bLastGOP = false;
+      m_iLastBufferedIdx = i;
       pDstInfo->iBufferStatus = 0;
       ++m_sReoderingStatus.iNumOfPicts;
       if (i > m_sReoderingStatus.iLargestBufferedPicIndex) {
@@ -1172,15 +1174,10 @@ void CWelsDecoder::ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsign
     }
   }
   if (m_sReoderingStatus.iMinPOC > IMinInt32) {
-    bool isReady = false;
-    if (pCtx != NULL) {
-      isReady = (m_sReoderingStatus.iLastWrittenPOC > IMinInt32
-                 && m_sReoderingStatus.iMinPOC - m_sReoderingStatus.iLastWrittenPOC <= 1)
-                || m_sReoderingStatus.iMinPOC < pCtx->pSliceHeader->iPicOrderCntLsb;
-    } else {
-      isReady = m_sReoderingStatus.iMinPOC == 0 || (m_sReoderingStatus.iLastWrittenPOC >= 0
-                && m_sReoderingStatus.iMinPOC <= m_sReoderingStatus.iLastWrittenPOC + 2) ;
-    }
+    int32_t iLastPOC = pCtx != NULL ? pCtx->pSliceHeader->iPicOrderCntLsb : m_sPictInfoList[m_iLastBufferedIdx].iPOC;
+    bool isReady = (m_sReoderingStatus.iLastWrittenPOC > IMinInt32
+                    && m_sReoderingStatus.iMinPOC - m_sReoderingStatus.iLastWrittenPOC <= 1)
+                   || m_sReoderingStatus.iMinPOC < iLastPOC;
     if (isReady) {
       m_sReoderingStatus.iLastWrittenPOC = m_sReoderingStatus.iMinPOC;
 #if defined (_DEBUG)
