@@ -91,7 +91,7 @@ static const FileParam kFileParamArray[] = {
   {"res/Adobe_PDF_sample_a_1024x768_50Frms.264", "3d94e7d515c857d968f8771e9691b53123e92c59"},
   {"res/BA1_FT_C.264", "cdc231904887d47f5e813cc87568c679e6c617f5"},
   {"res/BA1_Sony_D.jsv", "37c9a951a0348d6abe1880b59e2b5a4d7d18c94c"},
-  {"res/BAMQ1_JVC_C.264", "477b1e45e30661a138ff0b43c1ed3e00ded13d9c"},
+  {"res/BAMQ1_JVC_C.264", "6720462624f632f5475716ef32a7bbd12b3b428a"},
   {"res/BAMQ2_JVC_C.264", "2c89a880322a7bde152104b0aa7815f3ecd66de2"},
   {"res/BA_MW_D.264", "157dfc7d98dce5e09d513e5c47784510dd6e8c12"},
   {"res/BANM_MW_D.264", "da4a9cf7f0f744a8e02e56afdcf45e7049c47ee7"},
