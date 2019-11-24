@@ -198,9 +198,8 @@ void BaseThreadDecoderTest::DecodeFrame (const uint8_t* src, size_t sliceSize, C
 
   DECODING_STATE rv = decoder_->DecodeFrameNoDelay (src, (int) sliceSize, pData, &bufInfo);
   ASSERT_TRUE (rv == dsErrorFree);
-
-  if (bufInfo.iBufferStatus == 1 && cbk != NULL) {
-    sBufInfo = bufInfo;
+  sBufInfo = bufInfo;
+  if (sBufInfo.iBufferStatus == 1 && cbk != NULL) {
     if (bEnableYuvDumpTest) {
       Process (&sBufInfo, pYuvFile);
     }
@@ -237,9 +236,8 @@ void BaseThreadDecoderTest::FlushFrame (Callback* cbk) {
 
   DECODING_STATE rv = decoder_->FlushFrame (pData, &bufInfo);
   ASSERT_TRUE (rv == dsErrorFree);
-
-  if (bufInfo.iBufferStatus == 1 && cbk != NULL) {
-    sBufInfo = bufInfo;
+  sBufInfo = bufInfo;
+  if (sBufInfo.iBufferStatus == 1 && cbk != NULL) {
     if (bEnableYuvDumpTest) {
       Process (&sBufInfo, pYuvFile);
     }
