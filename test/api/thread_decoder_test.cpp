@@ -46,8 +46,7 @@ class ThreadDecoderInitTest : public ::testing::Test, public BaseThreadDecoderTe
 TEST_F (ThreadDecoderInitTest, JustInit) {}
 struct FileParam {
   const char* fileName;
-  const char* hashStr0;
-  const char* hashStr1;
+  const char* hashStr[2];
 };
 
 class ThreadDecoderOutputTest : public ::testing::WithParamInterface<FileParam>,
@@ -84,10 +83,7 @@ TEST_P (ThreadDecoderOutputTest, CompareOutput) {
   unsigned char digest[SHA_DIGEST_LENGTH];
   SHA1Result (&ctx_, digest);
   if (!HasFatalFailure()) {
-    const char* hashStr[2];
-    hashStr[0] = p.hashStr0;
-    hashStr[1] = p.hashStr1;
-    CompareHashAnyOf (digest, hashStr, 2);
+    CompareHashAnyOf (digest, p.hashStr, 2);
   }
 }
 static const FileParam kFileParamArray[] = {
