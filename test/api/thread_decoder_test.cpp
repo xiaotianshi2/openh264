@@ -115,7 +115,7 @@ static const FileParam kFileParamArray[] = {
   {"res/NLMQ2_JVC_C.264", "350ae86ef9ba09390d63a09b7f9ff54184109ca8", "95e6e4426b75f38a6744f3d04cfc62a2c0489354"}, //two choices
   {"res/NRF_MW_E.264", "5565843b3dcf39eb6b3a5580ce66379f220f7d1d", ""},
   {"res/QCIF_2P_I_allIPCM.264", "c7640f0704dcffb56ef3defea16e96bbd3aff822", ""},
-  { "res/SVA_BA1_B.264", "4cb45a99ae44a0a98b174efd66245daa1fbaeb47", ""/*"e9127875b268f9e7da4c495799b9972b8e72cf7b"*/ },
+  { "res/SVA_BA1_B.264", "4cb45a99ae44a0a98b174efd66245daa1fbaeb47", "e9127875b268f9e7da4c495799b9972b8e72cf7b"}, //two choices
   {"res/SVA_BA2_D.264", "1843d19d8e13588ef5de2d647804ae141e55cf72", "719fe839fa68b915b614fbbbae15edf492cc2133"}, //two choices
   {"res/SVA_Base_B.264", "d45aabda059b2305e16894bd804d53d24e5b95e6", ""},
   {"res/SVA_CL1_E.264", "4fe09ab6cdc965ea10a20f1d6dd38aca954412bb",  ""},
