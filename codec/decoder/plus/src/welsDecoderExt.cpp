@@ -926,20 +926,42 @@ DECODING_STATE CWelsDecoder::FlushFrame (unsigned char** ppDst,
   }
   if (bEndOfStreamFlag && m_sReoderingStatus.iNumOfPicts > 0) {
     m_sReoderingStatus.iMinPOC = IMinInt32;
-    int32_t firstValidIdx = -1;
-    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
-      if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32) {
-        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
-        m_sReoderingStatus.iPictInfoIndex = i;
-        firstValidIdx = i;
-        break;
+    if (m_bIsBaseline) {
+      uint32_t uiDecodingTimeStamp = 0;
+      int32_t firstValidIdx = -1;
+      for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+        if (m_sPictInfoList[i].iPOC > IMinInt32) {
+          uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
+          m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+          m_sReoderingStatus.iPictInfoIndex = i;
+          firstValidIdx = i;
+          break;
+        }
       }
-    }
-    for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
-      if (i == firstValidIdx) continue;
-      if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC) {
-        m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
-        m_sReoderingStatus.iPictInfoIndex = i;
+      for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+        if (i == firstValidIdx) continue;
+        if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].uiDecodingTimeStamp < uiDecodingTimeStamp) {
+          uiDecodingTimeStamp = m_sPictInfoList[i].uiDecodingTimeStamp;
+          m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+          m_sReoderingStatus.iPictInfoIndex = i;
+        }
+      }
+    } else {
+      int32_t firstValidIdx = -1;
+      for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+        if (m_sReoderingStatus.iMinPOC == IMinInt32 && m_sPictInfoList[i].iPOC > IMinInt32) {
+          m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+          m_sReoderingStatus.iPictInfoIndex = i;
+          firstValidIdx = i;
+          break;
+        }
+      }
+      for (int32_t i = 0; i <= m_sReoderingStatus.iLargestBufferedPicIndex; ++i) {
+        if (i == firstValidIdx) continue;
+        if (m_sPictInfoList[i].iPOC > IMinInt32 && m_sPictInfoList[i].iPOC < m_sReoderingStatus.iMinPOC) {
+          m_sReoderingStatus.iMinPOC = m_sPictInfoList[i].iPOC;
+          m_sReoderingStatus.iPictInfoIndex = i;
+        }
       }
     }
   }
