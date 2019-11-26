@@ -102,14 +102,14 @@ static const FileParam kFileParamArray[] = {
   //{"res/LS_SVA_D.264", "72118f4d1674cf14e58bed7e67cb3aeed3df62b9", ""}, //DPB buffer is too small
   {"res/MIDR_MW_D.264", "aeded2be7b97484cbf25f367ec34208f2220a8ab", ""},
   {"res/MPS_MW_A.264", "b0fce28218e678d89f464810f88b143ada49dd06",  ""},
-  {"res/MR1_BT_A.h264", "eebd1d7cdb67df5b8688b1ce18f6acae129b32e6", "80ae9abc0a30155181e62fec1bf1117281b808cb"},
+  //{"res/MR1_BT_A.h264", "eebd1d7cdb67df5b8688b1ce18f6acae129b32e6", "d20e96f9ecc2e24c13eb25b1c786da53eb716327"}, three hash values temp disabled
   {"res/MR1_MW_A.264", "14d8ddb12ed711444039329db29c496b079680ba", ""},
   {"res/MR2_MW_A.264", "6d332a653fe3b923eb3af8f3695d46ce2a1d4b2c", "14a38e41f4dbf924b8eff6e96aad77394c8aabcd"},
   //{"res/MR2_TANDBERG_E.264", "74d618bc7d9d41998edf4c85d51aa06111db6609", ""}, //DPB buffer is too small
   {"res/NL1_Sony_D.jsv", "e401e30669938443c2f02522fd4d5aa1382931a0", ""},
   {"res/NLMQ1_JVC_C.264", "f3265c6ddf8db1b2bf604d8a2954f75532e28cda", "a86ec7a843e93f44aaee2619a7932c6c5c8d233f"},
   {"res/NLMQ2_JVC_C.264", "350ae86ef9ba09390d63a09b7f9ff54184109ca8", "95e6e4426b75f38a6744f3d04cfc62a2c0489354"},
-  {"res/NRF_MW_E.264", "866f267afd2ed1595bcb90de0f539e929c169aa4", ""},
+  {"res/NRF_MW_E.264", "866f267afd2ed1595bcb90de0f539e929c169aa4", "db2d135cef07db8247ef858daf870d07955b912a"},
   {"res/QCIF_2P_I_allIPCM.264", "9879ce127d3263cfbaf5211ab6657dbf0ccabea8", ""},
   { "res/SVA_BA1_B.264", "4cb45a99ae44a0a98b174efd66245daa1fbaeb47", "e9127875b268f9e7da4c495799b9972b8e72cf7b"},
   {"res/SVA_BA2_D.264", "ac9e960015b96f83279840802f6637c61ee1c5b8", "719fe839fa68b915b614fbbbae15edf492cc2133"},
