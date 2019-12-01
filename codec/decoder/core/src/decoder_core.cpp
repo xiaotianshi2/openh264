@@ -2530,14 +2530,14 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
       if (pSh->iFirstMbInSlice == 0) {
         if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSlice) {
-          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinish, WELS_DEC_THREAD_WAIT_INFINITE);
         }
         pCtx->pDec = NULL;
         pCtx->iTotalNumMbRec = 0;
       } else if (pLastThreadCtx->pCtx->pDec != NULL) {
         if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
             && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
-          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinish, WELS_DEC_THREAD_WAIT_INFINITE);
           pCtx->pDec = pLastThreadCtx->pCtx->pDec;
           pCtx->pDec->bIsUngroupedMultiSlice = true;
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
@@ -2824,7 +2824,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         for (int32_t i = 0; i < iThreadCount; ++i) {
           if (i == id || pThreadCtx[i - id].pCtx->uiDecodingTimeStamp == 0) continue;
           if (pThreadCtx[i - id].pCtx->uiDecodingTimeStamp < pCtx->uiDecodingTimeStamp) {
-            WAIT_EVENT (&pThreadCtx[i - id].sSliceDecodeFinsh, WELS_DEC_THREAD_WAIT_INFINITE);
+            WAIT_EVENT (&pThreadCtx[i - id].sSliceDecodeFinish, WELS_DEC_THREAD_WAIT_INFINITE);
           }
         }
         pCtx->pLastDecPicInfo->uiDecodingTimeStamp = pCtx->uiDecodingTimeStamp;
@@ -2832,7 +2832,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       iRet = DecodeFrameConstruction (pCtx, ppDst, pDstInfo);
       if (iRet) {
         if (iThreadCount > 1) {
-          SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+          SET_EVENT (&pThreadCtx->sSliceDecodeFinish);
         }
         return iRet;
       }
@@ -2890,7 +2890,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       }
     }
     if (iThreadCount > 1) {
-      SET_EVENT (&pThreadCtx->sSliceDecodeFinsh);
+      SET_EVENT (&pThreadCtx->sSliceDecodeFinish);
     }
   }
   return ERR_NONE;
