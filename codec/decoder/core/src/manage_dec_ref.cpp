@@ -576,10 +576,9 @@ int32_t WelsReorderRefList2 (PWelsDecoderContext pCtx) {
 
 int32_t WelsMarkAsRef (PWelsDecoderContext pCtx, PPicture pLastDec) {
   PPicture pDec = pLastDec;
-  bool isThreadCtx = true;
+  bool isThreadCtx = GetThreadCount (pCtx) > 1;
   if (pDec == NULL) {
     pDec = pCtx->pDec;
-    isThreadCtx = false;
   }
   PRefPic pRefPic = isThreadCtx ? &pCtx->sTmpRefPic : &pCtx->sRefPic;
   PRefPicMarking pRefPicMarking = pCtx->pCurDqLayer->pRefPicMarking;

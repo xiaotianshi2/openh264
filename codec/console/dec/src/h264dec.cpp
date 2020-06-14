@@ -576,7 +576,7 @@ int32_t main (int32_t iArgC, char* pArgV[]) {
     pDecoder->SetOption (DECODER_OPTION_TRACE_LEVEL, &iLevelSetting);
   }
 
-  int32_t iThreadCount = 0;
+  int32_t iThreadCount = 1;
   pDecoder->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   if (pDecoder->Initialize (&sDecParam)) {

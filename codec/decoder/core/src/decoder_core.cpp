@@ -2338,7 +2338,7 @@ int32_t InitConstructAccessUnit (PWelsDecoderContext pCtx, SBufferInfo* pDstInfo
  */
 int32_t ConstructAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBufferInfo* pDstInfo) {
   int32_t iErr = ERR_NONE;
-  if (pCtx->pThreadCtx == NULL) {
+  if (GetThreadCount (pCtx) <= 1) {
     iErr = InitConstructAccessUnit (pCtx, pDstInfo);
     if (ERR_NONE != iErr) {
       return iErr;
@@ -2734,8 +2734,10 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           ComputeColocatedTemporalScaling (pCtx);
 
         if (iThreadCount > 1) {
-          memset (&pCtx->lastReadyHeightOffset[0][0], -1, LIST_A * MAX_REF_PIC_COUNT * sizeof (int16_t));
-          SET_EVENT (&pThreadCtx->sSliceDecodeStart);
+          if (iIdx == 0) {
+            memset (&pCtx->lastReadyHeightOffset[0][0], -1, LIST_A * MAX_REF_PIC_COUNT * sizeof (int16_t));
+            SET_EVENT (&pThreadCtx->sSliceDecodeStart);
+          }
           iRet = WelsDecodeAndConstructSlice (pCtx);
         } else {
           iRet = WelsDecodeSlice (pCtx, bFreshSliceAvailable, pNalCur);
