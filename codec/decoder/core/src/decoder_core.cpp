@@ -2550,7 +2550,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       isNewFrame = pCtx->pDec == NULL;
     }
     if (pCtx->pDec == NULL) {
-      if (pLastThreadCtx != NULL) {
+      if (pLastThreadCtx != NULL && iIdx == 0) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
         if (pLastThreadCtx->pDec->bUsedAsRef) {
           for (int32_t listIdx = LIST_0; listIdx < LIST_A; ++listIdx) {
