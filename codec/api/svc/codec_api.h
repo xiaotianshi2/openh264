@@ -114,7 +114,7 @@ typedef unsigned char bool;
   *        this can be done in a loop until data ends
   * @code
   *  //for Decoding only
-  *  iRet = pSvcDecoder->DecodeFrameNoDelay(pBuf, iSize, pData, &sDstBufInfo);
+  *  iRet = pSvcDecoder->DecodeFrameNoDelay(pBuf, iSize, pData, bOneCompleteFrame, &sDstBufInfo);
   *  //or
   *  iRet = pSvcDecoder->DecodeFrame2(pBuf, iSize, pData, &sDstBufInfo);
   *  //for Parsing only
@@ -374,7 +374,7 @@ class ISVCDecoder {
       int& iHeight) = 0;
 
   /**
-    * @brief    For slice level DecodeFrameNoDelay() (4 parameters input),
+    * @brief    For slice level DecodeFrameNoDelay() (5 parameters input),
     *           whatever the function return value is, the output data
     *           of I420 format will only be available when pDstInfo->iBufferStatus == 1,.
     *           This function will parse and reconstruct the input frame immediately if it is complete
@@ -382,12 +382,14 @@ class ISVCDecoder {
     * @param   pSrc the h264 stream to be decoded
     * @param   iSrcLen the length of h264 stream
     * @param   ppDst buffer pointer of decoded data (YUV)
+    * @param   if bOneCompleteFrame is true, the input iSrcLen must be the exact byte size of one complete frame
     * @param   pDstInfo information provided to API(width, height, etc.)
     * @return  0 - success; otherwise -failed;
     */
   virtual DECODING_STATE EXTAPI DecodeFrameNoDelay (const unsigned char* pSrc,
       const int iSrcLen,
       unsigned char** ppDst,
+      bool bOneCompleteFrame,
       SBufferInfo* pDstInfo) = 0;
 
   /**
@@ -508,6 +510,7 @@ DECODING_STATE (*DecodeFrame) (ISVCDecoder*, const unsigned char* pSrc,
 DECODING_STATE (*DecodeFrameNoDelay) (ISVCDecoder*, const unsigned char* pSrc,
                                       const int iSrcLen,
                                       unsigned char** ppDst,
+                                      bool bOneCompleteFrame,
                                       SBufferInfo* pDstInfo);
 
 DECODING_STATE (*DecodeFrame2) (ISVCDecoder*, const unsigned char* pSrc,

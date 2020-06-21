@@ -445,16 +445,10 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
           av_packet_ref (&avpkts[av_cur_ref_idx], &pktFiltered);
         }
         AVPacket tmp_pkt = iThreadCount > 1 ? avpkts[av_cur_ref_idx] : pktFiltered;
-#if 0
-        int32_t iSlicePos = 0;
-        while (iSlicePos < iSliceSize) {
-          int32_t slice_bytes_available = readASliceInFrame (tmp_pkt.data, iSliceSize, iSlicePos);
-          pDecoder->DecodeFrameNoDelay (tmp_pkt.data + iSlicePos, slice_bytes_available, pData, &sDstBufInfo);
-          iSlicePos += slice_bytes_available;
-        }
-#else
-        pDecoder->DecodeFrameNoDelay (tmp_pkt.data, iSliceSize, pData, &sDstBufInfo);
-#endif
+
+        bool bOneCompleteFrame = true;
+        pDecoder->DecodeFrameNoDelay (tmp_pkt.data, iSliceSize, pData, bOneCompleteFrame, &sDstBufInfo);
+
         if (iThreadCount > 1) {
           if (++av_cur_ref_idx >= 8) {
             av_cur_ref_idx = 0;
@@ -462,7 +456,7 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
         }
         av_packet_unref (&pkt);
       } else {
-        pDecoder->DecodeFrameNoDelay (pBuf + iBufPos, iSliceSize, pData, &sDstBufInfo);
+        pDecoder->DecodeFrameNoDelay (pBuf + iBufPos, iSliceSize, pData, false, &sDstBufInfo);
       }
     } else {
       pDecoder->DecodeFrame2 (pBuf + iBufPos, iSliceSize, pData, &sDstBufInfo);
@@ -745,7 +739,7 @@ int32_t main (int32_t iArgC, char* pArgV[]) {
     pDecoder->SetOption (DECODER_OPTION_TRACE_LEVEL, &iLevelSetting);
   }
 
-  int32_t iThreadCount = 1;
+  int32_t iThreadCount = 3;
   pDecoder->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
 

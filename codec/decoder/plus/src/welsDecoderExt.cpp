@@ -690,10 +690,11 @@ long CWelsDecoder::GetOption (DECODER_OPTION eOptID, void* pOption) {
 DECODING_STATE CWelsDecoder::DecodeFrameNoDelay (const unsigned char* kpSrc,
     const int kiSrcLen,
     unsigned char** ppDst,
+    bool bOneCompleteFrame,
     SBufferInfo* pDstInfo) {
   int iRet = dsErrorFree;
   if (m_iThreadCount >= 1) {
-    iRet = ThreadDecodeFrameInternal (kpSrc, kiSrcLen, ppDst, pDstInfo);
+    iRet = ThreadDecodeFrameInternal (kpSrc, kiSrcLen, ppDst, bOneCompleteFrame, pDstInfo);
     if (m_sReoderingStatus.iNumOfPicts) {
       WAIT_EVENT (&m_sBufferingEvent, WELS_DEC_THREAD_WAIT_INFINITE);
       RESET_EVENT (&m_sReleaseBufferEvent);
@@ -1357,7 +1358,7 @@ DECODING_STATE CWelsDecoder::DecodeFrameEx (const unsigned char* kpSrc,
   return state;
 }
 
-DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx) {
+DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx, bool bOneCompleteFrame) {
   sThreadCtx.pCtx->bHasNewSps = false;
   sThreadCtx.pCtx->bParamSetsLostFlag = m_bParamSetsLostFlag;
   sThreadCtx.pCtx->bFreezeOutput = m_bFreezeOutput;
@@ -1374,14 +1375,11 @@ DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx)
       sThreadCtx.pCtx->iImgHeightInPixel = m_pLastDecThrCtx->pCtx->iImgHeightInPixel;
     }
   }
-#pragma message("The following code can only apply for the case when kiBsLen is size of a complete video frame")
-#pragma message("This is test code that works for multi-slice frame")
-#if 0
-  if (GetThreadCount (sThreadCtx.pCtx) > 1) {
+
+  if (bOneCompleteFrame && GetThreadCount (sThreadCtx.pCtx) > 1) {
     sThreadCtx.pCtx->pAccessUnitList->uiAvailUnitsNum = 0;
     sThreadCtx.pCtx->pAccessUnitList->uiActualUnitsNum = 0;
   }
-#endif
 
   int32_t iRet = DecodeFrame2WithCtx (sThreadCtx.pCtx, sThreadCtx.kpSrc, sThreadCtx.kiSrcLen, sThreadCtx.ppDst,
                                       &sThreadCtx.sDstInfo);
@@ -1404,7 +1402,7 @@ DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx)
 */
 
 int CWelsDecoder::ThreadDecodeFrameInternal (const unsigned char* kpSrc, const int kiSrcLen, unsigned char** ppDst,
-    SBufferInfo* pDstInfo) {
+    bool bOneCompleteFrame, SBufferInfo* pDstInfo) {
   int state = dsErrorFree;
   int32_t i, j;
   int32_t signal = 0;
@@ -1439,7 +1437,7 @@ int CWelsDecoder::ThreadDecodeFrameInternal (const unsigned char* kpSrc, const i
   m_pDecThrCtx[signal].ppDst = ppDst;
   memcpy (&m_pDecThrCtx[signal].sDstInfo, pDstInfo, sizeof (SBufferInfo));
 
-  ParseAccessUnit (m_pDecThrCtx[signal]);
+  ParseAccessUnit (m_pDecThrCtx[signal], bOneCompleteFrame);
   if (m_iThreadCount > 1) {
     m_pLastDecThrCtx = &m_pDecThrCtx[signal];
   }
