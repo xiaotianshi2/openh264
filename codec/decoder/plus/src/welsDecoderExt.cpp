@@ -1374,6 +1374,15 @@ DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx)
       sThreadCtx.pCtx->iImgHeightInPixel = m_pLastDecThrCtx->pCtx->iImgHeightInPixel;
     }
   }
+#pragma message("The following code can only apply for the case when kiBsLen is size of a complete video frame")
+#pragma message("This is test code that works for multi-slice frame")
+#if 0
+  if (GetThreadCount (sThreadCtx.pCtx) > 1) {
+    sThreadCtx.pCtx->pAccessUnitList->uiAvailUnitsNum = 0;
+    sThreadCtx.pCtx->pAccessUnitList->uiActualUnitsNum = 0;
+  }
+#endif
+
   int32_t iRet = DecodeFrame2WithCtx (sThreadCtx.pCtx, sThreadCtx.kpSrc, sThreadCtx.kiSrcLen, sThreadCtx.ppDst,
                                       &sThreadCtx.sDstInfo);
 
