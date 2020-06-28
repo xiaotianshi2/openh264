@@ -2686,8 +2686,19 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
             if (pCtx->bNewSeqBegin) {
               iPrevFrameNum = 0;
             } else if (pLastThreadCtx->pDec != NULL) {
-              iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
-              if (iPrevFrameNum == -1) iPrevFrameNum = pLastThreadCtx->pCtx->iFrameNum;
+              if (pLastThreadCtx->pDec->uiTimeStamp == pCtx->uiTimeStamp - 1) {
+                iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
+                if (iPrevFrameNum == -1) iPrevFrameNum = pLastThreadCtx->pCtx->iFrameNum;
+              } else {
+                int32_t  id = pThreadCtx->sThreadInfo.uiThrNum;
+                for (int32_t i = 0; i < iThreadCount; ++i) {
+                  if (pThreadCtx[i - id].pCtx->uiTimeStamp == pCtx->uiTimeStamp - 1) {
+                    if (pThreadCtx[i - id].pDec != NULL) iPrevFrameNum = pThreadCtx[i - id].pDec->iFrameNum;
+                    if (iPrevFrameNum == -1) iPrevFrameNum = pThreadCtx[i - id].pCtx->iFrameNum;
+                    break;
+                  }
+                }
+              }
             } else {
               iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pCtx->iFrameNum;
             }
