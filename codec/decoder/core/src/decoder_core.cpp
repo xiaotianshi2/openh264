@@ -2687,6 +2687,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
               iPrevFrameNum = 0;
             } else if (pLastThreadCtx->pDec != NULL) {
               iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
+              if (iPrevFrameNum == -1) iPrevFrameNum = pLastThreadCtx->pCtx->iFrameNum;
             } else {
               iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pCtx->iFrameNum;
             }
