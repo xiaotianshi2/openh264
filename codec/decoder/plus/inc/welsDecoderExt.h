@@ -84,7 +84,6 @@ class CWelsDecoder : public ISVCDecoder {
   virtual DECODING_STATE EXTAPI DecodeFrameNoDelay (const unsigned char* kpSrc,
       const int kiSrcLen,
       unsigned char** ppDst,
-      bool bOneCompleteFrame,
       SBufferInfo* pDstInfo);
 
   virtual DECODING_STATE EXTAPI DecodeFrame2 (const unsigned char* kpSrc,
@@ -113,7 +112,7 @@ class CWelsDecoder : public ISVCDecoder {
  public:
   DECODING_STATE DecodeFrame2WithCtx (PWelsDecoderContext pCtx, const unsigned char* kpSrc, const int kiSrcLen,
                                       unsigned char** ppDst, SBufferInfo* pDstInfo);
-  DECODING_STATE ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx, bool bOneCompleteFrame);
+  DECODING_STATE ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx);
 
  private:
   welsCodecTrace*         m_pWelsTrace;
@@ -151,7 +150,7 @@ class CWelsDecoder : public ISVCDecoder {
   void OutputStatisticsLog (SDecoderStatistics& sDecoderStatistics);
   DECODING_STATE ReorderPicturesInDisplay (PWelsDecoderContext pCtx, unsigned char** ppDst, SBufferInfo* pDstInfo);
   int ThreadDecodeFrameInternal (const unsigned char* kpSrc, const int kiSrcLen, unsigned char** ppDst,
-                                 bool bOneCompleteFrame, SBufferInfo* pDstInfo);
+                                 SBufferInfo* pDstInfo);
   void BufferingReadyPicture (PWelsDecoderContext pCtx, unsigned char** ppDst, SBufferInfo* pDstInfo);
   void ReleaseBufferedReadyPicture (PWelsDecoderContext pCtx, unsigned char** ppDst, SBufferInfo* pDstInfo);
 

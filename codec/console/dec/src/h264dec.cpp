@@ -339,7 +339,7 @@ void H264DecodeInstance (ISVCDecoder* pDecoder, const char* kpH264FileName, cons
     memset (&sDstBufInfo, 0, sizeof (SBufferInfo));
     sDstBufInfo.uiInBsTimeStamp = uiTimeStamp;
     if (!bLegacyCalling) {
-      pDecoder->DecodeFrameNoDelay (pBuf + iBufPos, iSliceSize, pData, false, &sDstBufInfo);
+      pDecoder->DecodeFrameNoDelay (pBuf + iBufPos, iSliceSize, pData, &sDstBufInfo);
     } else {
       pDecoder->DecodeFrame2 (pBuf + iBufPos, iSliceSize, pData, &sDstBufInfo);
     }

@@ -690,11 +690,10 @@ long CWelsDecoder::GetOption (DECODER_OPTION eOptID, void* pOption) {
 DECODING_STATE CWelsDecoder::DecodeFrameNoDelay (const unsigned char* kpSrc,
     const int kiSrcLen,
     unsigned char** ppDst,
-    bool bOneCompleteFrame,
     SBufferInfo* pDstInfo) {
   int iRet = dsErrorFree;
   if (m_iThreadCount >= 1) {
-    iRet = ThreadDecodeFrameInternal (kpSrc, kiSrcLen, ppDst, bOneCompleteFrame, pDstInfo);
+    iRet = ThreadDecodeFrameInternal (kpSrc, kiSrcLen, ppDst, pDstInfo);
     if (m_sReoderingStatus.iNumOfPicts) {
       WAIT_EVENT (&m_sBufferingEvent, WELS_DEC_THREAD_WAIT_INFINITE);
       RESET_EVENT (&m_sReleaseBufferEvent);
@@ -1358,7 +1357,7 @@ DECODING_STATE CWelsDecoder::DecodeFrameEx (const unsigned char* kpSrc,
   return state;
 }
 
-DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx, bool bOneCompleteFrame) {
+DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx) {
   sThreadCtx.pCtx->bHasNewSps = false;
   sThreadCtx.pCtx->bParamSetsLostFlag = m_bParamSetsLostFlag;
   sThreadCtx.pCtx->bFreezeOutput = m_bFreezeOutput;
@@ -1376,7 +1375,8 @@ DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx,
     }
   }
 
-  if (bOneCompleteFrame && GetThreadCount (sThreadCtx.pCtx) > 1) {
+  //if threadCount > 1, then each thread must contain exact one complete frame.
+  if (GetThreadCount (sThreadCtx.pCtx) > 1) {
     sThreadCtx.pCtx->pAccessUnitList->uiAvailUnitsNum = 0;
     sThreadCtx.pCtx->pAccessUnitList->uiActualUnitsNum = 0;
   }
@@ -1402,7 +1402,7 @@ DECODING_STATE CWelsDecoder::ParseAccessUnit (SWelsDecoderThreadCTX& sThreadCtx,
 */
 
 int CWelsDecoder::ThreadDecodeFrameInternal (const unsigned char* kpSrc, const int kiSrcLen, unsigned char** ppDst,
-    bool bOneCompleteFrame, SBufferInfo* pDstInfo) {
+    SBufferInfo* pDstInfo) {
   int state = dsErrorFree;
   int32_t i, j;
   int32_t signal = 0;
@@ -1437,7 +1437,7 @@ int CWelsDecoder::ThreadDecodeFrameInternal (const unsigned char* kpSrc, const i
   m_pDecThrCtx[signal].ppDst = ppDst;
   memcpy (&m_pDecThrCtx[signal].sDstInfo, pDstInfo, sizeof (SBufferInfo));
 
-  ParseAccessUnit (m_pDecThrCtx[signal], bOneCompleteFrame);
+  ParseAccessUnit (m_pDecThrCtx[signal]);
   if (m_iThreadCount > 1) {
     m_pLastDecThrCtx = &m_pDecThrCtx[signal];
   }
