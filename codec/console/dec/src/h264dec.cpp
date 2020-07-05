@@ -96,12 +96,9 @@ int32_t bsGetUe (uint8_t* pBufPtr, int32_t& curBit) {
   return r;
 }
 
-int32_t readFirstMbInSlice (uint8_t* pSliceNalPtr, uint8_t nal_unit_type) {
-  int32_t firstMBInSlice = 0;
-  if (nal_unit_type == 1 || nal_unit_type == 5) {
-    int32_t curBit = 0;
-    firstMBInSlice = bsGetUe (pSliceNalPtr + 1, curBit);
-  }
+int32_t readFirstMbInSlice (uint8_t* pSliceNalPtr) {
+  int32_t curBit = 0;
+  int32_t firstMBInSlice = bsGetUe (pSliceNalPtr + 1, curBit);
   return firstMBInSlice;
 }
 
@@ -126,19 +123,22 @@ int32_t readPicture (uint8_t* pBuf, const int32_t& iFileSize, const int32_t& buf
       has3ByteStartCode = ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1;
     }
     if (has4ByteStartCode || has3ByteStartCode) {
+      int32_t byteOffset = has4ByteStartCode ? 4 : 3;
       uint8_t nal_unit_type = has4ByteStartCode ? (ptr[4] & 0x1F) : (ptr[3] & 0x1F);
       if (nal_unit_type == 1) {
-        if (++non_idr_pict_count == 1 && idr_pict_count == 1) {
+        int32_t firstMBInSlice = readFirstMbInSlice (ptr + byteOffset);
+        if (++non_idr_pict_count >= 1 && idr_pict_count >= 1 && firstMBInSlice == 0) {
           return read_bytes;
         }
-        if (non_idr_pict_count == 2) {
+        if (non_idr_pict_count >= 2 && firstMBInSlice == 0) {
           return read_bytes;
         }
       } else if (nal_unit_type == 5) {
-        if (++idr_pict_count == 1 && non_idr_pict_count == 1) {
+        int32_t firstMBInSlice = readFirstMbInSlice (ptr + byteOffset);
+        if (++idr_pict_count >= 1 && non_idr_pict_count >= 1 && firstMBInSlice == 0) {
           return read_bytes;
         }
-        if (idr_pict_count == 2) {
+        if (idr_pict_count >= 2 && firstMBInSlice == 0) {
           return read_bytes;
         }
       } else if (nal_unit_type == 7) {
@@ -613,7 +613,7 @@ int32_t main (int32_t iArgC, char* pArgV[]) {
     pDecoder->SetOption (DECODER_OPTION_TRACE_LEVEL, &iLevelSetting);
   }
 
-  int32_t iThreadCount = 1;
+  int32_t iThreadCount = 3;
   pDecoder->SetOption (DECODER_OPTION_NUM_OF_THREADS, &iThreadCount);
 
   if (pDecoder->Initialize (&sDecParam)) {
