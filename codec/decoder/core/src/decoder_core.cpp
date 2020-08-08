@@ -2683,25 +2683,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           // Subclause 8.2.5.2 Decoding process for gaps in frame_num
           int32_t iPrevFrameNum = pCtx->pLastDecPicInfo->iPrevFrameNum;
           if (pLastThreadCtx != NULL) {
-            if (pCtx->bNewSeqBegin) {
-              iPrevFrameNum = 0;
-            } else if (pLastThreadCtx->pDec != NULL) {
-              if (pLastThreadCtx->pDec->uiTimeStamp == pCtx->uiTimeStamp - 1) {
-                iPrevFrameNum = pLastThreadCtx->pDec->iFrameNum;
-                if (iPrevFrameNum == -1) iPrevFrameNum = pLastThreadCtx->pCtx->iFrameNum;
-              } else {
-                int32_t  id = pThreadCtx->sThreadInfo.uiThrNum;
-                for (int32_t i = 0; i < iThreadCount; ++i) {
-                  if (pThreadCtx[i - id].pCtx->uiTimeStamp == pCtx->uiTimeStamp - 1) {
-                    if (pThreadCtx[i - id].pDec != NULL) iPrevFrameNum = pThreadCtx[i - id].pDec->iFrameNum;
-                    if (iPrevFrameNum == -1) iPrevFrameNum = pThreadCtx[i - id].pCtx->iFrameNum;
-                    break;
-                  }
-                }
-              }
-            } else {
-              iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : pLastThreadCtx->pCtx->iFrameNum;
-            }
+            iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : GetPrevFrameNum (pCtx);
           }
           if (!kbIdrFlag  &&
               pSh->iFrameNum != iPrevFrameNum &&
