@@ -2525,26 +2525,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
     SLayerInfo pLayerInfo;
     PSliceHeaderExt pShExt = NULL;
     PSliceHeader pSh = NULL;
-
-    if (pLastThreadCtx != NULL) {
-      pSh = &pNalCur->sNalData.sVclNal.sSliceHeaderExt.sSliceHeader;
-      if (pSh->iFirstMbInSlice == 0) {
-        if (pLastThreadCtx->pCtx->pDec != NULL && pLastThreadCtx->pCtx->pDec->bIsUngroupedMultiSlice) {
-          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinish, WELS_DEC_THREAD_WAIT_INFINITE);
-        }
-        pCtx->pDec = NULL;
-        pCtx->iTotalNumMbRec = 0;
-      } else if (pLastThreadCtx->pCtx->pDec != NULL) {
-        if (pSh->iFrameNum == pLastThreadCtx->pCtx->pDec->iFrameNum
-            && pSh->iPicOrderCntLsb == pLastThreadCtx->pCtx->pDec->iFramePoc) {
-          WAIT_EVENT (&pLastThreadCtx->sSliceDecodeFinish, WELS_DEC_THREAD_WAIT_INFINITE);
-          pCtx->pDec = pLastThreadCtx->pCtx->pDec;
-          pCtx->pDec->bIsUngroupedMultiSlice = true;
-          pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
-          pCtx->iTotalNumMbRec = pLastThreadCtx->pCtx->iTotalNumMbRec;
-        }
-      }
-    }
     bool isNewFrame = true;
     if (iThreadCount > 1) {
       isNewFrame = pCtx->pDec == NULL;
@@ -2580,7 +2560,6 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
         return ERR_INFO_REF_COUNT_OVERFLOW;
       }
       if (pThreadCtx != NULL) {
-        pCtx->pDec->bIsUngroupedMultiSlice = false;
         pThreadCtx->pDec = pCtx->pDec;
         if (iThreadCount > 1) ++pCtx->pDec->iRefCount;
         uint32_t uiMbHeight = (pCtx->pDec->iHeightInPixel + 15) >> 4;
