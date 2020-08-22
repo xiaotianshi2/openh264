@@ -76,12 +76,12 @@ static int32_t ReadFrame (uint8_t* pBuf, const int32_t& iFileSize, const int32_t
           return read_bytes;
         }
       } else if (nal_unit_type == 7) {
-        if ((++sps_count == 1) && (non_idr_pict_count == 1 || idr_pict_count == 1)) {
+        if ((++sps_count >= 1) && (non_idr_pict_count >= 1 || idr_pict_count >= 1)) {
           return read_bytes;
         }
         if (sps_count == 2) return read_bytes;
       } else if (nal_unit_type == 8) {
-        if (++pps_count == 2) return read_bytes;
+        if (++pps_count >= 1 && (non_idr_pict_count >= 1 || idr_pict_count >= 1)) return read_bytes;
       }
       if (read_bytes >= bytes_available - 4) {
         return bytes_available;

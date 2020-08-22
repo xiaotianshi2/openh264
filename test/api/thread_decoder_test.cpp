@@ -110,7 +110,7 @@ static const FileParam kFileParamArray[] = {
   {"res/CVPCMNL1_SVA_C.264", "c2b0d964de727c64b9fccb58f63b567c82bda95a"},
   {"res/LS_SVA_D.264", "72118f4d1674cf14e58bed7e67cb3aeed3df62b9 e020a1c6668501887bb55e00741ebfdbc91d400d"}, //DPB buffer is too small
   {"res/MIDR_MW_D.264", "aeded2be7b97484cbf25f367ec34208f2220a8ab"},
-  //{"res/MPS_MW_A.264", "b0fce28218e678d89f464810f88b143ada49dd06"}, //hanging
+  {"res/MPS_MW_A.264", "b0fce28218e678d89f464810f88b143ada49dd06"},
   //{"res/MR1_BT_A.h264", "eebd1d7cdb67df5b8688b1ce18f6acae129b32e6 16df32765c45a0deef8efcfc98cb150fdbd5f12c 9f2b87ef4d3d051451107079e4821d2c41754f87"}, //three hash values temp disabled
   {"res/MR1_MW_A.264", "14d8ddb12ed711444039329db29c496b079680ba"},
   {"res/MR2_MW_A.264", "6d332a653fe3b923eb3af8f3695d46ce2a1d4b2c"},
@@ -130,12 +130,12 @@ static const FileParam kFileParamArray[] = {
   //{"res/SarVui.264", "1843d19d8e13588ef5de2d647804ae141e55cf72 719fe839fa68b915b614fbbbae15edf492cc2133"}, //same as "res/SVA_BA1_B.264"
   {"res/Static.264", "d865faee7df56a8f532b7baeacb814483b8be148 52af285a888b8c9e04dc9f38fd61105e805ada3a 1b6313262bff9c329aaf7dd3582525bd609c3974"},
   {"res/Zhling_1280x720.264", "10f9c803e80b51786f7833255afc3ef75c5c1339"},
-  //{"res/sps_subsetsps_bothVUI.264", "d65a34075c452196401340c554e83225c9454397"}, //hanging
+  {"res/sps_subsetsps_bothVUI.264", "d65a34075c452196401340c554e83225c9454397"}, //hanging
   {"res/test_cif_I_CABAC_PCM.264", "dfe2f87ac76bdb58e227267907a2eeccf04715ad 95fdf21470d3bbcf95505abb2164042063a79d98"},
   {"res/test_cif_I_CABAC_slice.264", "a7154eb1d0909eb9fd1e4e89f5d6271e5201814b 106da52c2c6d30255b6ac0aa0b4a881a06ebb762"},
   {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 fdcb320d8a5721f62c960c96342494982eda5e42 7d755833be8c017560e04446b01458d6109619a2"}, //3 hashes
   {"res/test_qcif_cabac.264", "c79e9a32e4d9e38a1bd12079da19dcb0d2efe539"},
-  //{"res/test_scalinglist_jm.264", "b36efd05c8b17faa23f1c071b92aa5d55a5a826f"}, //hanging
+  {"res/test_scalinglist_jm.264", "b36efd05c8b17faa23f1c071b92aa5d55a5a826f"}, //hanging
   {"res/test_vd_1d.264", "15d8beaf991f9e5d56a854cdafc0a7abdd5bec69"},
   {"res/test_vd_rc.264", "cd6ef57fc884e5ecd9867591b01e35e3f091b8d0"},
   {"res/Cisco_Men_whisper_640x320_CABAC_Bframe_9.264", "5d3d08fb47ac8c6e379c1572aed517522d883920 f5593d374e8f68b1c882d407d961d80cf10ba737"},
