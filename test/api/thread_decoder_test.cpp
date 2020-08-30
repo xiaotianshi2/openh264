@@ -106,7 +106,7 @@ static const FileParam kFileParamArray[] = {
   {"res/BASQP1_Sony_C.jsv", "2e10e98fc54f92cb5e72513bf417c4e4df333361"},
   {"res/CI1_FT_B.264", "721e555a33cfff81b6034a127334c5891776373c"}, ////occasioally hanging and needs to be addressed
   {"res/CI_MW_D.264", "49a8916edd3e571efad328f2784fbe6aec5570d7"},
-  {"res/CVFC1_Sony_C.jsv", "f577bd279e204d48317becfd5249405a7eb90312 824ae1dd1b6dc9f2acf1b014bcc0886ad16fa090"},
+  {"res/CVFC1_Sony_C.jsv", "5cc447bb7906d5b9858cc7092aaf491035861660"},
   {"res/CVPCMNL1_SVA_C.264", "c2b0d964de727c64b9fccb58f63b567c82bda95a"},
   //{"res/LS_SVA_D.264", "e020a1c6668501887bb55e00741ebfdbc91d400d"}, //occasioally hanging and needs to be addressed
   {"res/MIDR_MW_D.264", "aeded2be7b97484cbf25f367ec34208f2220a8ab"},
@@ -128,12 +128,12 @@ static const FileParam kFileParamArray[] = {
   {"res/SVA_NL1_B.264", "6d63f72a0c0d833b1db0ba438afff3b4180fb3e6"},
   {"res/SVA_NL2_E.264", "70453ef8097c94dd190d6d2d1d5cb83c67e66238"},
   {"res/SarVui.264", "ac9e960015b96f83279840802f6637c61ee1c5b8"},
-  {"res/Static.264", "52af285a888b8c9e04dc9f38fd61105e805ada3a d865faee7df56a8f532b7baeacb814483b8be148"},
+  {"res/Static.264", "1310f9a1d7d115eec8155d071b9b45b5cfbf8321"},
   {"res/Zhling_1280x720.264", "10f9c803e80b51786f7833255afc3ef75c5c1339"},
   {"res/sps_subsetsps_bothVUI.264", "d65a34075c452196401340c554e83225c9454397"},
   {"res/test_cif_I_CABAC_PCM.264", "95fdf21470d3bbcf95505abb2164042063a79d98"},
   {"res/test_cif_I_CABAC_slice.264", "a7154eb1d0909eb9fd1e4e89f5d6271e5201814b"},
-  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 7efb8a87879267096cc674abd48eef9e0fc06330"},
+  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 /*7efb8a87879267096cc674abd48eef9e0fc06330*/"},
   {"res/test_qcif_cabac.264", "c79e9a32e4d9e38a1bd12079da19dcb0d2efe539"},
   {"res/test_scalinglist_jm.264", "b36efd05c8b17faa23f1c071b92aa5d55a5a826f"},
   {"res/test_vd_1d.264", "15d8beaf991f9e5d56a854cdafc0a7abdd5bec69"},
@@ -143,10 +143,10 @@ static const FileParam kFileParamArray[] = {
   {"res/Cisco_Adobe_PDF_sample_a_1024x768_CAVLC_Bframe_9.264", "5fce0b92c5f2a1636ea06ae48ea208908fd01416"},
   {"res/VID_1280x544_cabac_temporal_direct.264", "ae5f21eff917d09d5a1ba2ad2075edd92eb6b61c"},
   {"res/VID_1280x720_cabac_temporal_direct.264", "2597181429a48740a143053a5b027dcbe4173f4e"},
-  {"res/VID_1920x1080_cabac_temporal_direct.264", "e8e686d4cd07cc39b4da5c5050fd500c81a2c715 1a31a34902e9c26ce8cee50744d86e6e429f0ff4"},
+  {"res/VID_1920x1080_cabac_temporal_direct.264", "8c93ae9acfdf6d902c1a47102d4bf3294f45c0f3"},
   {"res/VID_1280x544_cavlc_temporal_direct.264", "d9b31a2586ee156fe697de5934afb5a769f79494"},
   {"res/VID_1280x720_cavlc_temporal_direct.264", "888c31cef73eb6804e2469fa77e51636c915ff82"},
-  {"res/VID_1920x1080_cavlc_temporal_direct.264", "9085d7bbaf45d9414582727d30812c8fbedee5e5 b38f9817d8bd7b2d4ba483d9e71bb7d279610325"},
+  {"res/VID_1920x1080_cavlc_temporal_direct.264", "4467039825f472bae31e58b383b1f2c9a73ce8e0"},
 };
 
 INSTANTIATE_TEST_CASE_P (ThreadDecodeFile, ThreadDecoderOutputTest,
