@@ -113,7 +113,7 @@ static const FileParam kFileParamArray[] = {
   {"res/MPS_MW_A.264", "b0fce28218e678d89f464810f88b143ada49dd06"},
   //{"res/MR1_BT_A.h264", "16df32765c45a0deef8efcfc98cb150fdbd5f12c"}, //too many hash values and needs to be addressed
   {"res/MR1_MW_A.264", "14d8ddb12ed711444039329db29c496b079680ba"},
-  {"res/MR2_MW_A.264", "d6aa2797d07474d9656c3ca8d17c1ce1066d2f4a 6d332a653fe3b923eb3af8f3695d46ce2a1d4b2c"},
+  {"res/MR2_MW_A.264", "6d332a653fe3b923eb3af8f3695d46ce2a1d4b2c /*d6aa2797d07474d9656c3ca8d17c1ce1066d2f4a*/"},
   //{"res/MR2_TANDBERG_E.264", "74d618bc7d9d41998edf4c85d51aa06111db6609"}, //occasioally hanging and needs to be addressed
   {"res/NL1_Sony_D.jsv", "e401e30669938443c2f02522fd4d5aa1382931a0"},
   {"res/NLMQ1_JVC_C.264", "f3265c6ddf8db1b2bf604d8a2954f75532e28cda"},
