@@ -50,6 +50,7 @@ static int32_t ReadFrame (uint8_t* pBuf, const int32_t& iFileSize, const int32_t
   int32_t pps_count = 0;
   int32_t non_idr_pict_count = 0;
   int32_t idr_pict_count = 0;
+  int32_t nal_deliminator = 0;
   while (read_bytes < bytes_available - 4) {
     bool has4ByteStartCode = ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 0 && ptr[3] == 1;
     bool has3ByteStartCode = false;
@@ -82,6 +83,10 @@ static int32_t ReadFrame (uint8_t* pBuf, const int32_t& iFileSize, const int32_t
         if (sps_count == 2) return read_bytes;
       } else if (nal_unit_type == 8) {
         if (++pps_count >= 1 && (non_idr_pict_count >= 1 || idr_pict_count >= 1)) return read_bytes;
+      } else if (nal_unit_type == 9) {
+        if (++nal_deliminator == 2) {
+          return read_bytes;
+        }
       }
       if (read_bytes >= bytes_available - 4) {
         return bytes_available;
