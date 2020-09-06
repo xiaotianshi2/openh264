@@ -70,7 +70,7 @@ namespace WelsDec {
 
 #define IN_MB_BS_MV_DIFF(iMV_A, iMV_B, iMbXy, iIndex, iNeighIndex) \
 (\
-    (( WELS_ABS( iMV_A[iMbXy][iIndex][0] - iMV_B[iMbXy][iNeighIndex][0] ) >= 4 ) | \
+    (( WELS_ABS( iMV_A[iMbXy][iIndex][0] - iMV_B[iMbXy][iNeighIndex][0] ) >= 4 ) || \
     ( WELS_ABS( iMV_A[iMbXy][iIndex][1] - iMV_B[iMbXy][iNeighIndex][1] )  >= 4 )) \
 )
 
