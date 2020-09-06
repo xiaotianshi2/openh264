@@ -2421,9 +2421,9 @@ void WelsDqLayerDecodeStart (PWelsDecoderContext pCtx, PNalUnit pCurNal, PSps pS
 
 int32_t InitRefPicList (PWelsDecoderContext pCtx, const uint8_t kuiNRi, int32_t iPoc) {
   int32_t iRet = ERR_NONE;
-  //if (GetThreadCount (pCtx) > 1 && pCtx->bNewSeqBegin) {
-  //  WelsResetRefPic (pCtx);
-  //}
+  if (GetThreadCount (pCtx) > 1 && pCtx->bNewSeqBegin) {
+    WelsResetRefPic (pCtx);
+  }
   if (pCtx->eSliceType == B_SLICE) {
     iRet = WelsInitBSliceRefList (pCtx, iPoc);
     CreateImplicitWeightTable (pCtx);
