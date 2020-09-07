@@ -2421,9 +2421,6 @@ void WelsDqLayerDecodeStart (PWelsDecoderContext pCtx, PNalUnit pCurNal, PSps pS
 
 int32_t InitRefPicList (PWelsDecoderContext pCtx, const uint8_t kuiNRi, int32_t iPoc) {
   int32_t iRet = ERR_NONE;
-  //if (GetThreadCount (pCtx) > 1 && pCtx->bNewSeqBegin) {
-  //  WelsResetRefPic (pCtx);
-  //}
   if (pCtx->eSliceType == B_SLICE) {
     iRet = WelsInitBSliceRefList (pCtx, iPoc);
     CreateImplicitWeightTable (pCtx);
@@ -2530,6 +2527,8 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
       isNewFrame = pCtx->pDec == NULL;
     }
     if (pCtx->pDec == NULL) {
+      //make call PrefetchPic first before updating reference lists in threaded mode
+      //this prevents from possible thread-decoding hanging
       pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
       if (pLastThreadCtx != NULL) {
         pLastThreadCtx->pDec->bUsedAsRef = pLastThreadCtx->pCtx->uiNalRefIdc > 0;
@@ -2548,10 +2547,11 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           pCtx->sRefPic = pLastThreadCtx->pCtx->sRefPic;
         }
       }
+      //WelsResetRefPic needs to be called when a new sequence is encountered
+      //Otherwise artifacts is observed in decoded yuv in couple of unit tests with multiple-slice frame
       if (GetThreadCount (pCtx) > 1 && pCtx->bNewSeqBegin) {
         WelsResetRefPic (pCtx);
       }
-      //pCtx->pDec = PrefetchPic (pCtx->pPicBuff);
       if (pCtx->iTotalNumMbRec != 0)
         pCtx->iTotalNumMbRec = 0;
 
@@ -2666,6 +2666,7 @@ int32_t DecodeCurrentAccessUnit (PWelsDecoderContext pCtx, uint8_t** ppDst, SBuf
           // Subclause 8.2.5.2 Decoding process for gaps in frame_num
           int32_t iPrevFrameNum = pCtx->pLastDecPicInfo->iPrevFrameNum;
           if (pLastThreadCtx != NULL) {
+            //call GetPrevFrameNum() to get correct iPrevFrameNum to prevent frame gap warning
             iPrevFrameNum = pCtx->bNewSeqBegin ? 0 : GetPrevFrameNum (pCtx);
           }
           if (!kbIdrFlag  &&
