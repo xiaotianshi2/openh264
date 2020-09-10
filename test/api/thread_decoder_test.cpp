@@ -133,7 +133,7 @@ static const FileParam kFileParamArray[] = {
   {"res/sps_subsetsps_bothVUI.264", "d65a34075c452196401340c554e83225c9454397"},
   {"res/test_cif_I_CABAC_PCM.264", "95fdf21470d3bbcf95505abb2164042063a79d98"},
   {"res/test_cif_I_CABAC_slice.264", "a7154eb1d0909eb9fd1e4e89f5d6271e5201814b f1b681e300193145c3b0fe6a334f362e18825cd9"},
-  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 9a7f76b70dfa8d6c521a04402ae5baa9db603f5c 94e2164a2e35092ca566b2666b7378c478e083ab"},
+  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 9a7f76b70dfa8d6c521a04402ae5baa9db603f5c 94e2164a2e35092ca566b2666b7378c478e083ab 0225a3c31d5bd24d90117568a427a57a30e419f7"},
   {"res/test_qcif_cabac.264", "c79e9a32e4d9e38a1bd12079da19dcb0d2efe539"},
   {"res/test_scalinglist_jm.264", "b36efd05c8b17faa23f1c071b92aa5d55a5a826f"},
   {"res/test_vd_1d.264", "15d8beaf991f9e5d56a854cdafc0a7abdd5bec69"},
