@@ -97,7 +97,7 @@ TEST_P (ThreadDecoderOutputTest, CompareOutput) {
 }
 static const FileParam kFileParamArray[] = {
   {"res/Adobe_PDF_sample_a_1024x768_50Frms.264", "041434a5819d1d903d49c0eda884b345e9f83596"},
-  {"res/BA1_FT_C.264", "072ccfd92528f09ae8888cb5e023af511e1010a1 806d077797e26600e156da5b3e8a3a61ab20aeaa"},
+  //{"res/BA1_FT_C.264", "072ccfd92528f09ae8888cb5e023af511e1010a1 806d077797e26600e156da5b3e8a3a61ab20aeaa"},
   {"res/BA1_Sony_D.jsv", "37c9a951a0348d6abe1880b59e2b5a4d7d18c94c"},
   {"res/BAMQ1_JVC_C.264", "6720462624f632f5475716ef32a7bbd12b3b428a"},
   {"res/BAMQ2_JVC_C.264", "5f0fbb0dab7961e782224f6887c83d4866fc1af8"},
