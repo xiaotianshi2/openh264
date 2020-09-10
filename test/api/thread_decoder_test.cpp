@@ -97,14 +97,14 @@ TEST_P (ThreadDecoderOutputTest, CompareOutput) {
 }
 static const FileParam kFileParamArray[] = {
   {"res/Adobe_PDF_sample_a_1024x768_50Frms.264", "041434a5819d1d903d49c0eda884b345e9f83596"},
-  {"res/BA1_FT_C.264", "072ccfd92528f09ae8888cb5e023af511e1010a1"},
+  {"res/BA1_FT_C.264", "072ccfd92528f09ae8888cb5e023af511e1010a1 806d077797e26600e156da5b3e8a3a61ab20aeaa"},
   {"res/BA1_Sony_D.jsv", "37c9a951a0348d6abe1880b59e2b5a4d7d18c94c"},
   {"res/BAMQ1_JVC_C.264", "6720462624f632f5475716ef32a7bbd12b3b428a"},
   {"res/BAMQ2_JVC_C.264", "5f0fbb0dab7961e782224f6887c83d4866fc1af8"},
   {"res/BA_MW_D.264", "ace02cdce720bdb0698b40dc749a0e61fe0f590b"},
   {"res/BANM_MW_D.264", "c51f1d2fa63dba4f5787f1b726c056d1c01d6ab9"},
   {"res/BASQP1_Sony_C.jsv", "2e10e98fc54f92cb5e72513bf417c4e4df333361"},
-  {"res/CI1_FT_B.264", "721e555a33cfff81b6034a127334c5891776373c 684ecc6aa0c5ee2e240d7a351cf4d1e7d1f41bc6"},
+  {"res/CI1_FT_B.264", "721e555a33cfff81b6034a127334c5891776373c 684ecc6aa0c5ee2e240d7a351cf4d1e7d1f41bc6 c4fb85f49196ae7a2c3dbc0a5b6a5287cf2b2bea"},
   {"res/CI_MW_D.264", "49a8916edd3e571efad328f2784fbe6aec5570d7"},
   {"res/CVFC1_Sony_C.jsv", "5cc447bb7906d5b9858cc7092aaf491035861660"},
   {"res/CVPCMNL1_SVA_C.264", "c2b0d964de727c64b9fccb58f63b567c82bda95a"},
