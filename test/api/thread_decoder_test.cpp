@@ -104,14 +104,14 @@ static const FileParam kFileParamArray[] = {
   {"res/BA_MW_D.264", "ace02cdce720bdb0698b40dc749a0e61fe0f590b"},
   {"res/BANM_MW_D.264", "c51f1d2fa63dba4f5787f1b726c056d1c01d6ab9"},
   {"res/BASQP1_Sony_C.jsv", "2e10e98fc54f92cb5e72513bf417c4e4df333361"},
-  {"res/CI1_FT_B.264", "721e555a33cfff81b6034a127334c5891776373c"},
+  {"res/CI1_FT_B.264", "721e555a33cfff81b6034a127334c5891776373c 684ecc6aa0c5ee2e240d7a351cf4d1e7d1f41bc6"},
   {"res/CI_MW_D.264", "49a8916edd3e571efad328f2784fbe6aec5570d7"},
   {"res/CVFC1_Sony_C.jsv", "5cc447bb7906d5b9858cc7092aaf491035861660"},
   {"res/CVPCMNL1_SVA_C.264", "c2b0d964de727c64b9fccb58f63b567c82bda95a"},
   //{"res/LS_SVA_D.264", "e020a1c6668501887bb55e00741ebfdbc91d400d"}, //Multi-thread decoding hanging due to high pSps->iNumRefFrames which is 15
   {"res/MIDR_MW_D.264", "aeded2be7b97484cbf25f367ec34208f2220a8ab"},
   {"res/MPS_MW_A.264", "b0fce28218e678d89f464810f88b143ada49dd06"},
-  {"res/MR1_BT_A.h264", "7f6d806f12d19ec991182467e801a78fb4f80e04"},
+  {"res/MR1_BT_A.h264", "7f6d806f12d19ec991182467e801a78fb4f80e04 232b85e38af0b640cf34efa543c5c8a936adf208 c1386822ccc737cf1651c5bed944c00b9c19debf"},
   {"res/MR1_MW_A.264", "14d8ddb12ed711444039329db29c496b079680ba"},
   //{"res/MR2_MW_A.264", "eeb12ea18dc9852715a8b6a0c9a3bf6e956fb54e 6d332a653fe3b923eb3af8f3695d46ce2a1d4b2c 835934bff052506cfef23d304b6b8ce61d3eb45a"}, //This is the only test case which has more than one possible hash value. Don't know why yet. Needs to investigate.
   //{"res/MR2_TANDBERG_E.264", "74d618bc7d9d41998edf4c85d51aa06111db6609"}, //Multi-thread decoding hanging due to high pSps->iNumRefFrames which is 15
@@ -132,8 +132,8 @@ static const FileParam kFileParamArray[] = {
   {"res/Zhling_1280x720.264", "10f9c803e80b51786f7833255afc3ef75c5c1339"},
   {"res/sps_subsetsps_bothVUI.264", "d65a34075c452196401340c554e83225c9454397"},
   {"res/test_cif_I_CABAC_PCM.264", "95fdf21470d3bbcf95505abb2164042063a79d98"},
-  {"res/test_cif_I_CABAC_slice.264", "a7154eb1d0909eb9fd1e4e89f5d6271e5201814b"},
-  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811"},
+  {"res/test_cif_I_CABAC_slice.264", "a7154eb1d0909eb9fd1e4e89f5d6271e5201814b f1b681e300193145c3b0fe6a334f362e18825cd9"},
+  {"res/test_cif_P_CABAC_slice.264", "b08bcf1056458ae113d0a55f35e6b00eb2bd7811 9a7f76b70dfa8d6c521a04402ae5baa9db603f5c 94e2164a2e35092ca566b2666b7378c478e083ab"},
   {"res/test_qcif_cabac.264", "c79e9a32e4d9e38a1bd12079da19dcb0d2efe539"},
   {"res/test_scalinglist_jm.264", "b36efd05c8b17faa23f1c071b92aa5d55a5a826f"},
   {"res/test_vd_1d.264", "15d8beaf991f9e5d56a854cdafc0a7abdd5bec69"},
